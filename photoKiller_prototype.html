@@ -1,0 +1,2140 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>减法相册 原型设计</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f5f5f5;
+            padding: 20px;
+            color: #333;
+        }
+        
+        .prototype-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 30px;
+            justify-content: center;
+        }
+        
+        .phone-frame {
+            width: 375px;
+            height: 812px;
+            background-color: white;
+            border-radius: 40px;
+            overflow: hidden;
+            position: relative;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        
+        .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        .status-bar {
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+            margin-bottom: 10px;
+            padding: 5px 15px;
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .title {
+            font-size: 28px;
+            font-weight: bold;
+        }
+        
+        .subtitle {
+            font-size: 16px;
+            color: #666;
+            margin-top: 5px;
+        }
+        
+        .btn-primary {
+            background-color: #007aff;
+            border: none;
+        }
+        
+        .card {
+            border-radius: 15px;
+            margin-bottom: 15px;
+            border: none;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        
+        .progress {
+            height: 8px;
+            border-radius: 4px;
+        }
+        
+        .progress-bar {
+            background-color: #007aff;
+        }
+        
+        .list-group-item {
+            border: none;
+            padding: 15px;
+        }
+        
+        .photo-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 3px;
+            margin-top: 10px;
+        }
+        
+        .photo-item {
+            aspect-ratio: 1;
+            background-color: #ddd;
+            border-radius: 8px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .photo-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .month-stat {
+            display: flex;
+            justify-content: space-between;
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .swipe-card {
+            height: 500px;
+            position: relative;
+            overflow: hidden;
+            border-radius: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .swipe-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .swipe-actions {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: space-around;
+            padding: 20px;
+            background: linear-gradient(transparent, rgba(0,0,0,0.7));
+        }
+        
+        .action-button {
+            width: 60px;
+            height: 60px;
+            border-radius: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+        }
+        
+        .swipe-hint {
+            position: absolute;
+            top: 50%;
+            width: 100%;
+            text-align: center;
+            color: white;
+            font-size: 18px;
+            text-shadow: 0 2px 5px rgba(0,0,0,0.5);
+        }
+        
+        .tab-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: space-around;
+            padding: 15px 0;
+            background-color: white;
+            border-top: 1px solid #eee;
+        }
+        
+        .tab-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: #999;
+            font-size: 10px;
+        }
+        
+        .tab-item.active {
+            color: #007aff;
+        }
+        
+        .tab-item i {
+            font-size: 22px;
+            margin-bottom: 5px;
+        }
+        
+        .modal-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+        }
+        
+        .modal-content {
+            width: 85%;
+            background-color: white;
+            border-radius: 15px;
+            padding: 20px;
+        }
+        
+        .screen-label {
+            position: absolute;
+            bottom: -25px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .duplicate-group {
+            margin-bottom: 25px;
+        }
+        
+        .settings-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .settings-item-left {
+            display: flex;
+            align-items: center;
+        }
+        
+        .settings-item-left i {
+            margin-right: 15px;
+            font-size: 22px;
+            color: #007aff;
+            width: 25px;
+            text-align: center;
+        }
+        
+        .quick-action-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+        
+        .quick-action-item {
+            background-color: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+        
+        .quick-action-item i {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        
+        .quick-action-item .number {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .quick-action-item .label {
+            color: #999;
+        }
+        
+        .premium-tag {
+            background-color: #FFF3E0;
+            color: #FF9800;
+            border-radius: 20px;
+            padding: 5px 12px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .blue-bg {
+            background-color: #0066FF;
+            color: white;
+        }
+        
+        .completion-card {
+            background-color: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        .timestamp {
+            background-color: rgba(0,0,0,0.7);
+            color: white;
+            border-radius: 8px;
+            padding: 4px 8px;
+            font-size: 14px;
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        
+        .photo-date {
+            position: absolute;
+            bottom: 10px;
+            width: 100%;
+            text-align: center;
+            color: white;
+            font-size: 18px;
+            font-weight: bold;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+        }
+        
+        .swipe-indicator {
+            position: absolute;
+            background-color: rgba(255,255,255,0.9);
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+        
+        @keyframes fadeInOut {
+            0% { opacity: 0.3; }
+            50% { opacity: 1; }
+            100% { opacity: 0.3; }
+        }
+        
+        @keyframes slideDown {
+            0% { transform: translateY(-20px); opacity: 0.3; }
+            50% { transform: translateY(0); opacity: 1; }
+            100% { transform: translateY(-20px); opacity: 0.3; }
+        }
+        
+        @keyframes firework {
+            0% { transform: translate(var(--x), var(--initialY)); width: 0; opacity: 1; }
+            50% { width: var(--size); opacity: 1; }
+            100% { width: var(--size); transform: translate(var(--x), var(--finalY)); opacity: 0; }
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+        
+        @keyframes vibrate {
+            0% { transform: translate(0); }
+            20% { transform: translate(-2px, 2px); }
+            40% { transform: translate(2px, -2px); }
+            60% { transform: translate(-2px, -2px); }
+            80% { transform: translate(2px, 2px); }
+            100% { transform: translate(0); }
+        }
+        
+        @keyframes muscleFlexing {
+            0% { transform: rotate(-10deg); }
+            50% { transform: rotate(10deg); }
+            100% { transform: rotate(-10deg); }
+        }
+        
+        @keyframes swing {
+            0% { transform: rotate(-5deg); }
+            50% { transform: rotate(5deg); }
+            100% { transform: rotate(-5deg); }
+        }
+        
+        .firework {
+            position: absolute;
+            pointer-events: none;
+            border-radius: 50%;
+            mix-blend-mode: screen;
+            animation: firework var(--duration) ease-out forwards;
+        }
+        
+        .swipe-active {
+            background-color: rgba(255, 255, 255, 0.2);
+            transition: background-color 0.3s;
+        }
+        
+        .swipe-overlay {
+            position: absolute;
+            opacity: 0;
+        }
+        
+        .fireworks-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-center mb-5">减法相册原型设计</h1>
+        
+        <div class="prototype-container">
+            <!-- 首页/主界面（优化版） -->
+            <div class="phone-frame">
+                <div class="screen">
+                    <div class="status-bar">
+                        <span>19:45</span>
+                        <div>
+                            <i class="fas fa-signal"></i>
+                            <i class="fas fa-wifi"></i>
+                            <span style="background-color: #FFC107; color: black; border-radius: 4px; padding: 0 4px;">58</span>
+                        </div>
+                    </div>
+                    
+                    <div style="text-align: center; margin-bottom: 10px; position: relative;">
+                        <div style="position: absolute; left: 0; top: 5px;">
+                            <i class="fas fa-cog" style="font-size: 24px; color: #999;"></i>
+                        </div>
+                        <div style="color: #0066FF; font-size: 20px; font-weight: bold;">减法相册</div>
+                        <div style="position: absolute; right: 0; top: 0;">
+                            <div class="premium-tag">¥0.27/天<br>立即解锁</div>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-bottom: 20px;">
+                        <h2 style="font-size: 24px; font-weight: bold; margin-bottom: 5px;">开始整理</h2>
+                        <div style="font-size: 16px; color: #999; margin-bottom: 15px;">开始整理</div>
+                        
+                        <div style="display: flex; overflow-x: auto; gap: 10px; margin-bottom: 10px;">
+                            <div style="position: relative; min-width: 200px; height: 120px; border-radius: 12px; overflow: hidden;">
+                                <img src="https://source.unsplash.com/random/300x200?stock" style="width: 100%; height: 100%; object-fit: cover;">
+                                <div style="position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.5); color: white; padding: 8px; font-size: 12px;">
+                                    选股关注沿海地区受到煤炭价格下跌，长期低位，自由现金流改善边际较大的一些企业进行中期配置。个人会关注：
+                                    <br>
+                                    大唐发电，国电电力，华能国际...
+                                </div>
+                            </div>
+                            
+                            <div style="position: relative; min-width: 200px; height: 120px; border-radius: 12px; overflow: hidden;">
+                                <img src="https://source.unsplash.com/random/300x200?party" style="width: 100%; height: 100%; object-fit: cover;">
+                                <div class="photo-date">
+                                    6<br>
+                                    04月24日
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <h2 style="font-size: 24px; font-weight: bold; margin-bottom: 20px;">快捷整理</h2>
+                        
+                        <div class="quick-action-grid">
+                            <div class="quick-action-item">
+                                <div class="number">22</div>
+                                <div class="label">截屏</div>
+                                <div style="position: absolute; top: 15px; right: 15px;">
+                                    <i class="fas fa-expand" style="color: #FFD700; font-size: 18px;"></i>
+                                </div>
+                            </div>
+                            
+                            <div class="quick-action-item">
+                                <div class="number">440</div>
+                                <div class="label">视频</div>
+                                <div style="position: absolute; top: 15px; right: 15px;">
+                                    <i class="fas fa-play" style="color: #FF0000; font-size: 18px;"></i>
+                                </div>
+                            </div>
+                            
+                            <div class="quick-action-item">
+                                <div class="number">1035</div>
+                                <div class="label">相似照片</div>
+                                <div style="position: absolute; top: 15px; right: 15px;">
+                                    <i class="fas fa-clone" style="color: #4CAF50; font-size: 18px;"></i>
+                                </div>
+                            </div>
+                            
+                            <div class="quick-action-item">
+                                <div class="number">48</div>
+                                <div class="label">重复项</div>
+                                <div style="position: absolute; top: 15px; right: 15px;">
+                                    <i class="fas fa-copy" style="color: #2196F3; font-size: 18px;"></i>
+                                </div>
+                            </div>
+                            
+                            <div class="quick-action-item">
+                                <div class="number">2</div>
+                                <div class="label">空相册</div>
+                                <div style="position: absolute; top: 15px; right: 15px;">
+                                    <i class="fas fa-folder-open" style="color: #9C27B0; font-size: 18px;"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="screen-label">首页（优化版）</div>
+            </div>
+            
+            <!-- 照片整理界面 -->
+            <div class="phone-frame">
+                <div class="screen">
+                    <div class="status-bar">
+                        <span>9:41</span>
+                        <div>
+                            <i class="fas fa-signal"></i>
+                            <i class="fas fa-wifi"></i>
+                            <i class="fas fa-battery-full"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div>
+                            <i class="fas fa-chevron-left" style="font-size: 20px;"></i>
+                        </div>
+                        <div>
+                            <h5 class="mb-0">2023年11月</h5>
+                            <div class="text-center text-muted small">216 张照片</div>
+                        </div>
+                        <div>
+                            <span class="badge bg-primary rounded-pill">23/216</span>
+                        </div>
+                    </div>
+                    
+                    <div class="swipe-card mb-3">
+                        <img src="https://source.unsplash.com/random/800x1000?nature" class="swipe-image" alt="照片">
+                        
+                        <div class="swipe-hint" style="left: -40%; opacity: 0.7;">
+                            <i class="fas fa-bookmark fa-2x"></i>
+                            <div>左滑收藏</div>
+                        </div>
+                        
+                        <div class="swipe-hint" style="right: -40%; opacity: 0.7;">
+                            <i class="fas fa-check fa-2x"></i>
+                            <div>右滑保留</div>
+                        </div>
+                        
+                        <div class="swipe-hint" style="top: 30%; opacity: 0.7;">
+                            <i class="fas fa-trash fa-2x"></i>
+                            <div>下拉删除</div>
+                        </div>
+                        
+                        <div class="swipe-actions">
+                            <div class="action-button" style="background-color: #ff9500;">
+                                <i class="fas fa-bookmark"></i>
+                            </div>
+                            <div class="action-button" style="background-color: #34c759;">
+                                <i class="fas fa-check"></i>
+                            </div>
+                            <div class="action-button" style="background-color: #ff3b30;">
+                                <i class="fas fa-trash"></i>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div style="width: 33.33%; text-align: center;">
+                            <div class="text-muted">收藏</div>
+                            <div><strong>12</strong></div>
+                        </div>
+                        <div style="width: 33.33%; text-align: center;">
+                            <div class="text-muted">保留</div>
+                            <div><strong>98</strong></div>
+                        </div>
+                        <div style="width: 33.33%; text-align: center;">
+                            <div class="text-muted">删除</div>
+                            <div><strong>106</strong></div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h6>照片预览</h6>
+                            <small class="text-muted">剩余 193 张</small>
+                        </div>
+                        <div class="photo-grid">
+                            <div class="photo-item">
+                                <img src="https://source.unsplash.com/random/300x300?sky" alt="照片">
+                            </div>
+                            <div class="photo-item">
+                                <img src="https://source.unsplash.com/random/300x300?beach" alt="照片">
+                            </div>
+                            <div class="photo-item">
+                                <img src="https://source.unsplash.com/random/300x300?mountain" alt="照片">
+                            </div>
+                            <div class="photo-item">
+                                <img src="https://source.unsplash.com/random/300x300?sunset" alt="照片">
+                            </div>
+                            <div class="photo-item">
+                                <img src="https://source.unsplash.com/random/300x300?forest" alt="照片">
+                            </div>
+                            <div class="photo-item">
+                                <img src="https://source.unsplash.com/random/300x300?city" alt="照片">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4 text-center">
+                        <button class="btn btn-primary px-4 py-2">完成整理</button>
+                    </div>
+                </div>
+                <div class="screen-label">照片整理界面</div>
+            </div>
+            
+            <!-- 重复照片识别界面 -->
+            <div class="phone-frame">
+                <div class="screen">
+                    <div class="status-bar">
+                        <span>9:41</span>
+                        <div>
+                            <i class="fas fa-signal"></i>
+                            <i class="fas fa-wifi"></i>
+                            <i class="fas fa-battery-full"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div>
+                            <i class="fas fa-chevron-left" style="font-size: 20px;"></i>
+                        </div>
+                        <div>
+                            <h5 class="mb-0">重复照片</h5>
+                            <div class="text-center text-muted small">共154组</div>
+                        </div>
+                        <div>
+                            <i class="fas fa-ellipsis-v"></i>
+                        </div>
+                    </div>
+                    
+                    <div style="overflow-y: auto; max-height: 680px;">
+                        <div class="duplicate-group">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h6>组 1（3张）</h6>
+                                <div>
+                                    <button class="btn btn-sm btn-outline-danger me-1">全部删除</button>
+                                    <button class="btn btn-sm btn-outline-primary">保留最佳</button>
+                                </div>
+                            </div>
+                            <div class="d-flex">
+                                <div style="width: 48%; margin-right: 2%; position: relative;">
+                                    <div class="photo-item" style="height: 200px; margin-bottom: 5px;">
+                                        <img src="https://source.unsplash.com/random/400x400?beach" alt="照片">
+                                        <div style="position: absolute; top: 10px; right: 10px; background-color: #fff; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;">
+                                            <i class="fas fa-star text-warning"></i>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex justify-content-between">
+                                        <small>2023/11/12</small>
+                                        <small>2.3MB</small>
+                                    </div>
+                                </div>
+                                <div style="width: 48%; position: relative;">
+                                    <div class="photo-item" style="height: 200px; margin-bottom: 5px;">
+                                        <img src="https://source.unsplash.com/random/400x401?beach" alt="照片">
+                                        <div style="position: absolute; top: 10px; right: 10px; background-color: rgba(255,255,255,0.8); border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;">
+                                            <i class="fas fa-check-circle"></i>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex justify-content-between">
+                                        <small>2023/11/12</small>
+                                        <small>1.8MB</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-2">
+                                <div style="width: 48%; position: relative;">
+                                    <div class="photo-item" style="height: 200px; margin-bottom: 5px;">
+                                        <img src="https://source.unsplash.com/random/400x402?beach" alt="照片">
+                                        <div style="position: absolute; top: 10px; right: 10px; background-color: rgba(255,255,255,0.8); border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;">
+                                            <i class="fas fa-check-circle"></i>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex justify-content-between">
+                                        <small>2023/11/12</small>
+                                        <small>1.5MB</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="duplicate-group">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h6>组 2（2张）</h6>
+                                <div>
+                                    <button class="btn btn-sm btn-outline-danger me-1">全部删除</button>
+                                    <button class="btn btn-sm btn-outline-primary">保留最佳</button>
+                                </div>
+                            </div>
+                            <div class="d-flex">
+                                <div style="width: 48%; margin-right: 2%; position: relative;">
+                                    <div class="photo-item" style="height: 200px; margin-bottom: 5px;">
+                                        <img src="https://source.unsplash.com/random/400x400?mountain" alt="照片">
+                                        <div style="position: absolute; top: 10px; right: 10px; background-color: #fff; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;">
+                                            <i class="fas fa-star text-warning"></i>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex justify-content-between">
+                                        <small>2023/10/05</small>
+                                        <small>3.1MB</small>
+                                    </div>
+                                </div>
+                                <div style="width: 48%; position: relative;">
+                                    <div class="photo-item" style="height: 200px; margin-bottom: 5px;">
+                                        <img src="https://source.unsplash.com/random/400x401?mountain" alt="照片">
+                                        <div style="position: absolute; top: 10px; right: 10px; background-color: rgba(255,255,255,0.8); border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;">
+                                            <i class="fas fa-check-circle"></i>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex justify-content-between">
+                                        <small>2023/10/05</small>
+                                        <small>2.7MB</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="screen-label">重复照片识别界面</div>
+            </div>
+            
+            <!-- 相似照片识别界面 -->
+            <div class="phone-frame">
+                <div class="screen">
+                    <div class="status-bar">
+                        <span>9:41</span>
+                        <div>
+                            <i class="fas fa-signal"></i>
+                            <i class="fas fa-wifi"></i>
+                            <i class="fas fa-battery-full"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div>
+                            <i class="fas fa-chevron-left" style="font-size: 20px;"></i>
+                        </div>
+                        <div>
+                            <h5 class="mb-0">相似照片</h5>
+                            <div class="text-center text-muted small">共87组</div>
+                        </div>
+                        <div>
+                            <i class="fas fa-ellipsis-v"></i>
+                        </div>
+                    </div>
+                    
+                    <div style="overflow-y: auto; max-height: 680px;">
+                        <div class="card mb-4">
+                            <div class="card-header bg-white">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h6 class="mb-0">旅行照片组（5张）</h6>
+                                    <button class="btn btn-sm btn-outline-primary">智能选择</button>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="photo-grid mb-3">
+                                    <div class="photo-item position-relative">
+                                        <img src="https://source.unsplash.com/random/300x300?travel1" alt="照片">
+                                        <div style="position: absolute; bottom: 5px; right: 5px; background-color: rgba(0,0,0,0.6); color: white; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; border-radius: 50%;">
+                                            <i class="fas fa-check" style="font-size: 12px;"></i>
+                                        </div>
+                                    </div>
+                                    <div class="photo-item position-relative">
+                                        <img src="https://source.unsplash.com/random/300x300?travel2" alt="照片">
+                                        <div style="position: absolute; bottom: 5px; right: 5px; background-color: rgba(0,0,0,0.6); color: white; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; border-radius: 50%;">
+                                            <i class="fas fa-check" style="font-size: 12px;"></i>
+                                        </div>
+                                    </div>
+                                    <div class="photo-item position-relative">
+                                        <img src="https://source.unsplash.com/random/300x300?travel3" alt="照片">
+                                    </div>
+                                    <div class="photo-item position-relative">
+                                        <img src="https://source.unsplash.com/random/300x300?travel4" alt="照片">
+                                        <div style="position: absolute; bottom: 5px; right: 5px; background-color: rgba(0,0,0,0.6); color: white; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; border-radius: 50%;">
+                                            <i class="fas fa-check" style="font-size: 12px;"></i>
+                                        </div>
+                                    </div>
+                                    <div class="photo-item position-relative">
+                                        <img src="https://source.unsplash.com/random/300x300?travel5" alt="照片">
+                                    </div>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <button class="btn btn-sm btn-danger">删除选中</button>
+                                    <button class="btn btn-sm btn-outline-secondary">仅保留选中</button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="card mb-4">
+                            <div class="card-header bg-white">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h6 class="mb-0">家庭聚会（3张）</h6>
+                                    <button class="btn btn-sm btn-outline-primary">智能选择</button>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="photo-grid mb-3">
+                                    <div class="photo-item position-relative">
+                                        <img src="https://source.unsplash.com/random/300x300?family1" alt="照片">
+                                        <div style="position: absolute; bottom: 5px; right: 5px; background-color: rgba(0,0,0,0.6); color: white; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; border-radius: 50%;">
+                                            <i class="fas fa-check" style="font-size: 12px;"></i>
+                                        </div>
+                                    </div>
+                                    <div class="photo-item position-relative">
+                                        <img src="https://source.unsplash.com/random/300x300?family2" alt="照片">
+                                    </div>
+                                    <div class="photo-item position-relative">
+                                        <img src="https://source.unsplash.com/random/300x300?family3" alt="照片">
+                                        <div style="position: absolute; bottom: 5px; right: 5px; background-color: rgba(0,0,0,0.6); color: white; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; border-radius: 50%;">
+                                            <i class="fas fa-check" style="font-size: 12px;"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <button class="btn btn-sm btn-danger">删除选中</button>
+                                    <button class="btn btn-sm btn-outline-secondary">仅保留选中</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="screen-label">相似照片识别界面</div>
+            </div>
+            
+            <!-- 模糊照片识别界面 -->
+            <div class="phone-frame">
+                <div class="screen">
+                    <div class="status-bar">
+                        <span>9:41</span>
+                        <div>
+                            <i class="fas fa-signal"></i>
+                            <i class="fas fa-wifi"></i>
+                            <i class="fas fa-battery-full"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div>
+                            <i class="fas fa-chevron-left" style="font-size: 20px;"></i>
+                        </div>
+                        <div>
+                            <h5 class="mb-0">模糊照片</h5>
+                            <div class="text-center text-muted small">共32张</div>
+                        </div>
+                        <div>
+                            <i class="fas fa-ellipsis-v"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <span>清晰度阈值</span>
+                                <small class="text-muted">（拖动调整识别灵敏度）</small>
+                            </div>
+                            <span><strong>中等</strong></span>
+                        </div>
+                        <input type="range" class="form-range" min="1" max="5" step="1" value="3">
+                        <div class="d-flex justify-content-between">
+                            <small class="text-muted">低</small>
+                            <small class="text-muted">高</small>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between mb-3">
+                        <button class="btn btn-outline-primary">全选</button>
+                        <button class="btn btn-danger">删除选中</button>
+                    </div>
+                    
+                    <div style="overflow-y: auto; max-height: 550px;">
+                        <div class="photo-grid">
+                            <div class="photo-item position-relative">
+                                <img src="https://source.unsplash.com/random/300x300?blur1" style="filter: blur(2px);" alt="照片">
+                                <div style="position: absolute; top: 5px; right: 5px; background-color: rgba(0,0,0,0.6); color: white; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 50%;">
+                                    <i class="fas fa-check" style="font-size: 14px;"></i>
+                                </div>
+                            </div>
+                            <div class="photo-item position-relative">
+                                <img src="https://source.unsplash.com/random/300x300?blur2" style="filter: blur(3px);" alt="照片">
+                                <div style="position: absolute; top: 5px; right: 5px; background-color: rgba(0,0,0,0.6); color: white; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 50%;">
+                                    <i class="fas fa-check" style="font-size: 14px;"></i>
+                                </div>
+                            </div>
+                            <div class="photo-item position-relative">
+                                <img src="https://source.unsplash.com/random/300x300?blur3" style="filter: blur(2.5px);" alt="照片">
+                            </div>
+                            <div class="photo-item position-relative">
+                                <img src="https://source.unsplash.com/random/300x300?blur4" style="filter: blur(4px);" alt="照片">
+                                <div style="position: absolute; top: 5px; right: 5px; background-color: rgba(0,0,0,0.6); color: white; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 50%;">
+                                    <i class="fas fa-check" style="font-size: 14px;"></i>
+                                </div>
+                            </div>
+                            <div class="photo-item position-relative">
+                                <img src="https://source.unsplash.com/random/300x300?blur5" style="filter: blur(3.5px);" alt="照片">
+                            </div>
+                            <div class="photo-item position-relative">
+                                <img src="https://source.unsplash.com/random/300x300?blur6" style="filter: blur(2.8px);" alt="照片">
+                                <div style="position: absolute; top: 5px; right: 5px; background-color: rgba(0,0,0,0.6); color: white; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 50%;">
+                                    <i class="fas fa-check" style="font-size: 14px;"></i>
+                                </div>
+                            </div>
+                            <div class="photo-item position-relative">
+                                <img src="https://source.unsplash.com/random/300x300?blur7" style="filter: blur(2.2px);" alt="照片">
+                            </div>
+                            <div class="photo-item position-relative">
+                                <img src="https://source.unsplash.com/random/300x300?blur8" style="filter: blur(3.2px);" alt="照片">
+                                <div style="position: absolute; top: 5px; right: 5px; background-color: rgba(0,0,0,0.6); color: white; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 50%;">
+                                    <i class="fas fa-check" style="font-size: 14px;"></i>
+                                </div>
+                            </div>
+                            <div class="photo-item position-relative">
+                                <img src="https://source.unsplash.com/random/300x300?blur9" style="filter: blur(2.7px);" alt="照片">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="screen-label">模糊照片识别界面</div>
+            </div>
+            
+            <!-- 整理进度统计界面 -->
+            <div class="phone-frame">
+                <div class="screen">
+                    <div class="status-bar">
+                        <span>9:41</span>
+                        <div>
+                            <i class="fas fa-signal"></i>
+                            <i class="fas fa-wifi"></i>
+                            <i class="fas fa-battery-full"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="header">
+                        <div>
+                            <div class="title">整理统计</div>
+                            <div class="subtitle">查看你的整理成果</div>
+                        </div>
+                        <div>
+                            <i class="fas fa-share-alt" style="font-size: 24px;"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <h5 class="mb-3">总体进度</h5>
+                            <div class="progress mb-3" style="height: 10px;">
+                                <div class="progress-bar" role="progressbar" style="width: 35%" aria-valuenow="35" aria-valuemin="0" aria-valuemax="100"></div>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h3>35%</h3>
+                                    <small class="text-muted">完成度</small>
+                                </div>
+                                <div>
+                                    <h3>4,782</h3>
+                                    <small class="text-muted">已整理</small>
+                                </div>
+                                <div>
+                                    <h3>13,650</h3>
+                                    <small class="text-muted">总照片</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <h5 class="mb-3">整理成果</h5>
+                            <div class="d-flex mb-3">
+                                <div style="width: 70%;">
+                                    <div style="height: 20px; background-color: #ff3b30; width: 60%;"></div>
+                                </div>
+                                <div style="width: 30%; padding-left: 10px;">
+                                    <div><strong>1,869 张</strong></div>
+                                    <small class="text-muted">已删除</small>
+                                </div>
+                            </div>
+                            <div class="d-flex mb-3">
+                                <div style="width: 70%;">
+                                    <div style="height: 20px; background-color: #ff9500; width: 25%;"></div>
+                                </div>
+                                <div style="width: 30%; padding-left: 10px;">
+                                    <div><strong>865 张</strong></div>
+                                    <small class="text-muted">已收藏</small>
+                                </div>
+                            </div>
+                            <div class="d-flex">
+                                <div style="width: 70%;">
+                                    <div style="height: 20px; background-color: #34c759; width: 45%;"></div>
+                                </div>
+                                <div style="width: 30%; padding-left: 10px;">
+                                    <div><strong>2,048 张</strong></div>
+                                    <small class="text-muted">已保留</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="mb-3">最近整理活动</h5>
+                            <div class="mb-3 pb-3" style="border-bottom: 1px solid #eee;">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <div>
+                                        <strong>2023年11月整理</strong>
+                                    </div>
+                                    <div class="text-muted">
+                                        <small>2023/12/18</small>
+                                    </div>
+                                </div>
+                                <div>
+                                    <small class="text-muted">整理了 216 张照片，删除 106 张，收藏 12 张</small>
+                                </div>
+                            </div>
+                            <div class="mb-3 pb-3" style="border-bottom: 1px solid #eee;">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <div>
+                                        <strong>重复照片清理</strong>
+                                    </div>
+                                    <div class="text-muted">
+                                        <small>2023/12/15</small>
+                                    </div>
+                                </div>
+                                <div>
+                                    <small class="text-muted">清理了 154 组重复照片，删除 132 张</small>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <div>
+                                        <strong>2023年10月整理</strong>
+                                    </div>
+                                    <div class="text-muted">
+                                        <small>2023/12/10</small>
+                                    </div>
+                                </div>
+                                <div>
+                                    <small class="text-muted">整理了 185 张照片，删除 87 张，收藏 23 张</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="tab-bar">
+                        <div class="tab-item">
+                            <i class="fas fa-home"></i>
+                            <span>首页</span>
+                        </div>
+                        <div class="tab-item">
+                            <i class="fas fa-images"></i>
+                            <span>相册</span>
+                        </div>
+                        <div class="tab-item active">
+                            <i class="fas fa-chart-pie"></i>
+                            <span>统计</span>
+                        </div>
+                        <div class="tab-item">
+                            <i class="fas fa-user"></i>
+                            <span>我的</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="screen-label">整理进度统计界面</div>
+            </div>
+            
+            <!-- 设置界面 -->
+            <div class="phone-frame">
+                <div class="screen">
+                    <div class="status-bar">
+                        <span>9:41</span>
+                        <div>
+                            <i class="fas fa-signal"></i>
+                            <i class="fas fa-wifi"></i>
+                            <i class="fas fa-battery-full"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div>
+                            <i class="fas fa-chevron-left" style="font-size: 20px;"></i>
+                        </div>
+                        <div>
+                            <h5 class="mb-0">设置</h5>
+                        </div>
+                        <div style="width: 20px;"></div>
+                    </div>
+                    
+                    <div style="overflow-y: auto; max-height: 680px;">
+                        <div class="card mb-4">
+                            <div class="settings-item">
+                                <div class="settings-item-left">
+                                    <i class="fas fa-bell"></i>
+                                    <div>
+                                        <div>整理提醒</div>
+                                        <small class="text-muted">每周末提醒我整理照片</small>
+                                    </div>
+                                </div>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" checked>
+                                </div>
+                            </div>
+                            
+                            <div class="settings-item">
+                                <div class="settings-item-left">
+                                    <i class="fas fa-calendar-alt"></i>
+                                    <div>提醒频率</div>
+                                </div>
+                                <div class="d-flex align-items-center">
+                                    <span class="me-2">每周末</span>
+                                    <i class="fas fa-chevron-right text-muted"></i>
+                                </div>
+                            </div>
+                            
+                            <div class="settings-item">
+                                <div class="settings-item-left">
+                                    <i class="fas fa-cloud"></i>
+                                    <div>
+                                        <div>iCloud 同步</div>
+                                        <small class="text-muted">同步整理数据到其他设备</small>
+                                    </div>
+                                </div>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" checked>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="card mb-4">
+                            <div class="settings-item">
+                                <div class="settings-item-left">
+                                    <i class="fas fa-magic"></i>
+                                    <div>AI 识别设置</div>
+                                </div>
+                                <div>
+                                    <i class="fas fa-chevron-right text-muted"></i>
+                                </div>
+                            </div>
+                            
+                            <div class="settings-item">
+                                <div class="settings-item-left">
+                                    <i class="fas fa-sliders-h"></i>
+                                    <div>相似度阈值</div>
+                                </div>
+                                <div class="d-flex align-items-center">
+                                    <span class="me-2">中等</span>
+                                    <i class="fas fa-chevron-right text-muted"></i>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="card mb-4">
+                            <div class="settings-item">
+                                <div class="settings-item-left">
+                                    <i class="fas fa-trash"></i>
+                                    <div>
+                                        <div>自动清空删除列表</div>
+                                        <small class="text-muted">删除30天后自动从系统相册清除</small>
+                                    </div>
+                                </div>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox">
+                                </div>
+                            </div>
+                            
+                            <div class="settings-item">
+                                <div class="settings-item-left">
+                                    <i class="fas fa-shield-alt"></i>
+                                    <div>
+                                        <div>隐私模式</div>
+                                        <small class="text-muted">需要Face ID验证才能查看</small>
+                                    </div>
+                                </div>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="card mb-4">
+                            <div class="settings-item">
+                                <div class="settings-item-left">
+                                    <i class="fas fa-question-circle"></i>
+                                    <div>帮助与反馈</div>
+                                </div>
+                                <div>
+                                    <i class="fas fa-chevron-right text-muted"></i>
+                                </div>
+                            </div>
+                            
+                            <div class="settings-item">
+                                <div class="settings-item-left">
+                                    <i class="fas fa-star"></i>
+                                    <div>给我们评分</div>
+                                </div>
+                                <div>
+                                    <i class="fas fa-chevron-right text-muted"></i>
+                                </div>
+                            </div>
+                            
+                            <div class="settings-item">
+                                <div class="settings-item-left">
+                                    <i class="fas fa-info-circle"></i>
+                                    <div>关于</div>
+                                </div>
+                                <div>
+                                    <span class="text-muted me-2">v2.0.1</span>
+                                    <i class="fas fa-chevron-right text-muted"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="screen-label">设置界面</div>
+            </div>
+            
+            <!-- 相簿整理界面 -->
+            <div class="phone-frame">
+                <div class="screen">
+                    <div class="status-bar">
+                        <span>9:41</span>
+                        <div>
+                            <i class="fas fa-signal"></i>
+                            <i class="fas fa-wifi"></i>
+                            <i class="fas fa-battery-full"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="header">
+                        <div>
+                            <div class="title">相册</div>
+                            <div class="subtitle">整理你的相簿</div>
+                        </div>
+                        <div>
+                            <i class="fas fa-plus" style="font-size: 24px;"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h5 class="mb-0">智能分类</h5>
+                            <small class="text-primary">查看全部</small>
+                        </div>
+                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px;">
+                            <div class="card" style="border-radius: 12px; overflow: hidden;">
+                                <img src="https://source.unsplash.com/random/400x300?nature" style="height: 100px; object-fit: cover;">
+                                <div class="card-body py-2">
+                                    <h6 class="mb-0">自然风景</h6>
+                                    <small class="text-muted">247 张</small>
+                                </div>
+                            </div>
+                            <div class="card" style="border-radius: 12px; overflow: hidden;">
+                                <img src="https://source.unsplash.com/random/400x300?food" style="height: 100px; object-fit: cover;">
+                                <div class="card-body py-2">
+                                    <h6 class="mb-0">美食</h6>
+                                    <small class="text-muted">186 张</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-bottom: 70px;">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h5 class="mb-0">我的相簿</h5>
+                            <div>
+                                <button class="btn btn-sm btn-outline-primary me-2">
+                                    <i class="fas fa-check-square me-1"></i>
+                                    选择
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger">
+                                    <i class="fas fa-trash me-1"></i>
+                                    清理空相册
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div style="overflow-y: auto; max-height: 450px;">
+                            <div class="card mb-3">
+                                <div class="d-flex">
+                                    <div style="width: 30%;">
+                                        <img src="https://source.unsplash.com/random/300x300?travel" style="height: 100px; width: 100%; object-fit: cover; border-top-left-radius: 12px; border-bottom-left-radius: 12px;">
+                                    </div>
+                                    <div style="width: 70%; padding: 15px;">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <h6 class="mb-0">2023旅行</h6>
+                                            <span class="badge bg-primary rounded-pill">132</span>
+                                        </div>
+                                        <small class="text-muted">最后更新: 2023/12/15</small>
+                                        <div class="mt-2">
+                                            <button class="btn btn-sm btn-outline-secondary">
+                                                <i class="fas fa-edit me-1"></i>
+                                                整理
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="card mb-3">
+                                <div class="d-flex">
+                                    <div style="width: 30%;">
+                                        <img src="https://source.unsplash.com/random/300x300?family" style="height: 100px; width: 100%; object-fit: cover; border-top-left-radius: 12px; border-bottom-left-radius: 12px;">
+                                    </div>
+                                    <div style="width: 70%; padding: 15px;">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <h6 class="mb-0">家人聚会</h6>
+                                            <span class="badge bg-primary rounded-pill">87</span>
+                                        </div>
+                                        <small class="text-muted">最后更新: 2023/11/20</small>
+                                        <div class="mt-2">
+                                            <button class="btn btn-sm btn-outline-secondary">
+                                                <i class="fas fa-edit me-1"></i>
+                                                整理
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="card mb-3">
+                                <div class="d-flex">
+                                    <div style="width: 30%;">
+                                        <img src="https://source.unsplash.com/random/300x300?work" style="height: 100px; width: 100%; object-fit: cover; border-top-left-radius: 12px; border-bottom-left-radius: 12px;">
+                                    </div>
+                                    <div style="width: 70%; padding: 15px;">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <h6 class="mb-0">工作截图</h6>
+                                            <span class="badge bg-primary rounded-pill">54</span>
+                                        </div>
+                                        <small class="text-muted">最后更新: 2023/12/02</small>
+                                        <div class="mt-2">
+                                            <button class="btn btn-sm btn-outline-secondary">
+                                                <i class="fas fa-edit me-1"></i>
+                                                整理
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="card" style="border: 1px dashed #ccc; background-color: transparent; display: flex; justify-content: center; align-items: center; height: 100px;">
+                                <div class="text-center">
+                                    <i class="fas fa-plus-circle" style="font-size: 24px; color: #007aff;"></i>
+                                    <div class="mt-2">创建新相册</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="tab-bar">
+                        <div class="tab-item">
+                            <i class="fas fa-home"></i>
+                            <span>首页</span>
+                        </div>
+                        <div class="tab-item active">
+                            <i class="fas fa-images"></i>
+                            <span>相册</span>
+                        </div>
+                        <div class="tab-item">
+                            <i class="fas fa-chart-pie"></i>
+                            <span>统计</span>
+                        </div>
+                        <div class="tab-item">
+                            <i class="fas fa-user"></i>
+                            <span>我的</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="screen-label">相簿整理界面</div>
+            </div>
+            
+            <!-- 截屏整理页面（优化版） -->
+            <div class="phone-frame">
+                <div class="screen">
+                    <div class="status-bar">
+                        <span>19:46</span>
+                        <div>
+                            <i class="fas fa-signal"></i>
+                            <i class="fas fa-wifi"></i>
+                            <span style="background-color: #FFC107; color: black; border-radius: 4px; padding: 0 4px;">58</span>
+                        </div>
+                    </div>
+                    
+                    <div style="display: flex; align-items: center; margin-bottom: 20px;">
+                        <div>
+                            <i class="fas fa-chevron-left" style="font-size: 20px;"></i>
+                        </div>
+                        <div style="flex-grow: 1; margin-left: 15px;">
+                            <h1 style="font-size: 28px; font-weight: bold; margin-bottom: 0;">截屏</h1>
+                            <div style="color: #999;">共23张 占用40.9MB空间</div>
+                        </div>
+                        <div>
+                            <i class="fas fa-history" style="font-size: 22px; color: #0066FF;"></i>
+                        </div>
+                    </div>
+                    
+                    <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                        <div style="min-width: 80px; background-color: #0066FF; color: white; padding: 10px 20px; border-radius: 25px; text-align: center;">
+                            全部
+                        </div>
+                        <div style="min-width: 130px; background-color: #F0F0F0; color: #333; padding: 10px 20px; border-radius: 25px; text-align: center;">
+                            15天以上项目
+                        </div>
+                        <div style="min-width: 130px; background-color: #F0F0F0; color: #333; padding: 10px 20px; border-radius: 25px; text-align: center;">
+                            30天以上项目
+                        </div>
+                        <div style="min-width: 130px; background-color: #F0F0F0; color: #333; padding: 10px 20px; border-radius: 25px; text-align: center;">
+                            180天以上
+                        </div>
+                    </div>
+                    
+                    <div style="height: 580px; overflow-y: auto;">
+                        <div class="card mb-3">
+                            <img src="https://source.unsplash.com/random/600x400?screenshot1" style="width: 100%; object-fit: cover; border-radius: 15px;">
+                        </div>
+                        
+                        <div class="card mb-3">
+                            <img src="https://source.unsplash.com/random/600x400?screenshot2" style="width: 100%; object-fit: cover; border-radius: 15px;">
+                        </div>
+                        
+                        <div class="card mb-3">
+                            <img src="https://source.unsplash.com/random/600x400?screenshot3" style="width: 100%; object-fit: cover; border-radius: 15px;">
+                        </div>
+                        
+                        <div class="card mb-3">
+                            <img src="https://source.unsplash.com/random/600x400?screenshot4" style="width: 100%; object-fit: cover; border-radius: 15px;">
+                        </div>
+                    </div>
+                    
+                    <div style="position: absolute; bottom: 20px; left: 0; right: 0; display: flex; justify-content: center;">
+                        <div style="background-color: #F0F0F0; border-radius: 25px; padding: 10px 30px; display: flex; align-items: center; gap: 8px;">
+                            <i class="fas fa-check-circle" style="color: #666;"></i>
+                            <span>选择全部</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="screen-label">截屏整理页面（优化版）</div>
+            </div>
+            
+            <!-- 重复项页面（优化版） -->
+            <div class="phone-frame">
+                <div class="screen">
+                    <div class="status-bar">
+                        <span>19:46</span>
+                        <div>
+                            <i class="fas fa-signal"></i>
+                            <i class="fas fa-wifi"></i>
+                            <span style="background-color: #FFC107; color: black; border-radius: 4px; padding: 0 4px;">58</span>
+                        </div>
+                    </div>
+                    
+                    <div style="display: flex; align-items: center; margin-bottom: 20px;">
+                        <div>
+                            <i class="fas fa-chevron-left" style="font-size: 20px;"></i>
+                        </div>
+                        <div style="flex-grow: 1; margin-left: 15px;">
+                            <h1 style="font-size: 28px; font-weight: bold; margin-bottom: 0;">重复项</h1>
+                            <div style="color: #999;">共48张 占用80.5MB空间</div>
+                        </div>
+                        <div style="color: #0066FF; font-weight: bold;">
+                            保留列表
+                        </div>
+                    </div>
+                    
+                    <div style="height: 650px; overflow-y: auto;">
+                        <div style="position: relative; margin-bottom: 20px;">
+                            <div style="height: 240px; background-color: #d6eaff; border-radius: 15px; overflow: hidden;">
+                                <img src="https://source.unsplash.com/random/800x600?mountain,lake" style="width: 100%; height: 100%; object-fit: cover;">
+                            </div>
+                            <div style="position: absolute; top: 15px; right: 15px; background-color: white; border-radius: 15px; padding: 5px 10px; display: flex; align-items: center; gap: 5px;">
+                                <i class="fas fa-diamond" style="color: #0066FF;"></i>
+                                <span style="color: #0066FF; font-weight: bold;">最优推荐</span>
+                            </div>
+                            
+                            <div style="display: flex; margin-top: 15px; gap: 15px;">
+                                <div style="width: 60px; height: 60px; border-radius: 10px; overflow: hidden; position: relative;">
+                                    <img src="https://source.unsplash.com/random/100x100?mountain,lake1" style="width: 100%; height: 100%; object-fit: cover;">
+                                </div>
+                                <div style="width: 60px; height: 60px; border-radius: 10px; overflow: hidden; position: relative;">
+                                    <img src="https://source.unsplash.com/random/100x100?mountain,lake2" style="width: 100%; height: 100%; object-fit: cover;">
+                                    <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(255,255,255,0.7); display: flex; justify-content: center; align-items: center;">
+                                        <i class="fas fa-check" style="color: white; background-color: #0066FF; border-radius: 50%; width: 24px; height: 24px; display: flex; justify-content: center; align-items: center;"></i>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div style="position: absolute; bottom: 15px; right: 15px;">
+                                <button style="background-color: #F0F0F0; border: none; border-radius: 25px; padding: 10px 20px; font-weight: bold;">
+                                    保留全部
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div style="position: relative; margin-bottom: 20px;">
+                            <div style="height: 240px; background-color: #d6eaff; border-radius: 15px; overflow: hidden;">
+                                <img src="https://source.unsplash.com/random/800x600?mountain,sunset" style="width: 100%; height: 100%; object-fit: cover;">
+                            </div>
+                            <div style="position: absolute; top: 15px; right: 15px; background-color: white; border-radius: 15px; padding: 5px 10px; display: flex; align-items: center; gap: 5px;">
+                                <i class="fas fa-diamond" style="color: #0066FF;"></i>
+                                <span style="color: #0066FF; font-weight: bold;">最优推荐</span>
+                            </div>
+                            
+                            <div style="display: flex; margin-top: 15px; gap: 15px;">
+                                <div style="width: 60px; height: 60px; border-radius: 10px; overflow: hidden; position: relative;">
+                                    <img src="https://source.unsplash.com/random/100x100?mountain,sunset1" style="width: 100%; height: 100%; object-fit: cover;">
+                                </div>
+                                <div style="width: 60px; height: 60px; border-radius: 10px; overflow: hidden; position: relative;">
+                                    <img src="https://source.unsplash.com/random/100x100?mountain,sunset2" style="width: 100%; height: 100%; object-fit: cover;">
+                                    <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(255,255,255,0.7); display: flex; justify-content: center; align-items: center;">
+                                        <i class="fas fa-check" style="color: white; background-color: #0066FF; border-radius: 50%; width: 24px; height: 24px; display: flex; justify-content: center; align-items: center;"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div style="position: fixed; bottom: 20px; left: 60px; right: 60px; display: flex; justify-content: space-between; align-items: center;">
+                        <div style="background-color: white; border: 1px solid #ddd; border-radius: 30px; width: 100px; height: 50px; display: flex; justify-content: center; align-items: center; gap: 5px;">
+                            <i class="fas fa-check-circle" style="color: #FF0000;"></i>
+                            <span>选择全部</span>
+                        </div>
+                        <div style="background-color: #FF0000; border-radius: 30px; width: 160px; height: 50px; display: flex; justify-content: center; align-items: center; color: white; font-weight: bold; gap: 5px;">
+                            <i class="fas fa-trash"></i>
+                            <span>24</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="screen-label">重复项页面（优化版）</div>
+            </div>
+            
+            <!-- 空相册页面（优化版） -->
+            <div class="phone-frame">
+                <div class="screen">
+                    <div class="status-bar">
+                        <span>19:46</span>
+                        <div>
+                            <i class="fas fa-signal"></i>
+                            <i class="fas fa-wifi"></i>
+                            <span style="background-color: #FFC107; color: black; border-radius: 4px; padding: 0 4px;">58</span>
+                        </div>
+                    </div>
+                    
+                    <div style="display: flex; align-items: center; margin-bottom: 20px;">
+                        <div>
+                            <i class="fas fa-chevron-left" style="font-size: 20px;"></i>
+                        </div>
+                        <div style="flex-grow: 1; margin-left: 15px;">
+                            <h1 style="font-size: 28px; font-weight: bold; margin-bottom: 0;">空相册</h1>
+                            <div style="color: #999;">共2项</div>
+                        </div>
+                    </div>
+                    
+                    <div style="height: 650px; overflow-y: auto;">
+                        <div style="background-color: #F5F5F5; border-radius: 15px; padding: 20px; margin-bottom: 15px; display: flex; align-items: center;">
+                            <div style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; margin-right: 15px;">
+                                <i class="fas fa-check-circle" style="color: #FF0000; font-size: 24px;"></i>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 10px; flex-grow: 1;">
+                                <i class="fas fa-image" style="color: #999; font-size: 20px;"></i>
+                                <span style="font-size: 16px;">剪映</span>
+                            </div>
+                        </div>
+                        
+                        <div style="background-color: #F5F5F5; border-radius: 15px; padding: 20px; margin-bottom: 15px; display: flex; align-items: center;">
+                            <div style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; margin-right: 15px;">
+                                <i class="fas fa-check-circle" style="color: #FF0000; font-size: 24px;"></i>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 10px; flex-grow: 1;">
+                                <i class="fas fa-image" style="color: #999; font-size: 20px;"></i>
+                                <span style="font-size: 16px;">Jagat</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div style="position: fixed; bottom: 20px; left: 60px; right: 60px; display: flex; justify-content: space-between; align-items: center;">
+                        <div style="background-color: white; border: 1px solid #ddd; border-radius: 30px; width: 100px; height: 50px; display: flex; justify-content: center; align-items: center; gap: 5px;">
+                            <i class="fas fa-check-circle" style="color: #FF0000;"></i>
+                            <span>选择全部</span>
+                        </div>
+                        <div style="background-color: #FF0000; border-radius: 30px; width: 160px; height: 50px; display: flex; justify-content: center; align-items: center; color: white; font-weight: bold; gap: 5px;">
+                            <i class="fas fa-trash"></i>
+                            <span>2</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="screen-label">空相册页面（优化版）</div>
+            </div>
+            
+            <!-- 视频页面（优化版） -->
+            <div class="phone-frame">
+                <div class="screen">
+                    <div class="status-bar">
+                        <span>19:46</span>
+                        <div>
+                            <i class="fas fa-signal"></i>
+                            <i class="fas fa-wifi"></i>
+                            <span style="background-color: #FFC107; color: black; border-radius: 4px; padding: 0 4px;">58</span>
+                        </div>
+                    </div>
+                    
+                    <div style="display: flex; align-items: center; margin-bottom: 20px;">
+                        <div>
+                            <i class="fas fa-chevron-left" style="font-size: 20px;"></i>
+                        </div>
+                        <div style="flex-grow: 1; margin-left: 15px;">
+                            <h1 style="font-size: 28px; font-weight: bold; margin-bottom: 0;">视频</h1>
+                            <div style="color: #999;">共440个 占用7.50GB空间</div>
+                        </div>
+                        <div>
+                            <i class="fas fa-folder" style="font-size: 22px; color: #0066FF;"></i>
+                        </div>
+                    </div>
+                    
+                    <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                        <div style="min-width: 80px; background-color: #0066FF; color: white; padding: 10px 20px; border-radius: 25px; text-align: center;">
+                            全部
+                        </div>
+                        <div style="min-width: 130px; background-color: #F0F0F0; color: #333; padding: 10px 20px; border-radius: 25px; text-align: center;">
+                            慢动作
+                        </div>
+                    </div>
+                    
+                    <div style="height: 650px; overflow-y: auto; display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px;">
+                        <div style="position: relative; border-radius: 15px; overflow: hidden;">
+                            <img src="https://source.unsplash.com/random/300x400?girl" style="width: 100%; height: 260px; object-fit: cover;">
+                            <div style="position: absolute; top: 15px; left: 15px; width: 40px; height: 40px; border-radius: 20px; background-color: rgba(255,255,255,0.3); display: flex; justify-content: center; align-items: center;">
+                                <i class="fas fa-circle" style="color: white;"></i>
+                            </div>
+                            <div style="position: absolute; top: 15px; right: 15px; color: white; font-weight: bold;">
+                                260.1MB
+                            </div>
+                        </div>
+                        
+                        <div style="position: relative; border-radius: 15px; overflow: hidden;">
+                            <img src="https://source.unsplash.com/random/300x400?cooking" style="width: 100%; height: 260px; object-fit: cover;">
+                            <div style="position: absolute; top: 15px; left: 15px; width: 40px; height: 40px; border-radius: 20px; background-color: rgba(255,255,255,0.3); display: flex; justify-content: center; align-items: center;">
+                                <i class="fas fa-circle" style="color: white;"></i>
+                            </div>
+                            <div style="position: absolute; top: 15px; right: 15px; color: white; font-weight: bold;">
+                                230.0MB
+                            </div>
+                        </div>
+                        
+                        <div style="position: relative; border-radius: 15px; overflow: hidden;">
+                            <img src="https://source.unsplash.com/random/300x400?nature" style="width: 100%; height: 260px; object-fit: cover;">
+                            <div style="position: absolute; top: 15px; left: 15px; width: 40px; height: 40px; border-radius: 20px; background-color: rgba(255,255,255,0.3); display: flex; justify-content: center; align-items: center;">
+                                <i class="fas fa-circle" style="color: white;"></i>
+                            </div>
+                            <div style="position: absolute; top: 15px; right: 15px; color: white; font-weight: bold;">
+                                205.9MB
+                            </div>
+                        </div>
+                        
+                        <div style="position: relative; border-radius: 15px; overflow: hidden;">
+                            <img src="https://source.unsplash.com/random/300x400?music" style="width: 100%; height: 260px; object-fit: cover;">
+                            <div style="position: absolute; top: 15px; left: 15px; width: 40px; height: 40px; border-radius: 20px; background-color: rgba(255,255,255,0.3); display: flex; justify-content: center; align-items: center;">
+                                <i class="fas fa-circle" style="color: white;"></i>
+                            </div>
+                            <div style="position: absolute; top: 15px; right: 15px; color: white; font-weight: bold;">
+                                192.7MB
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div style="position: fixed; bottom: 20px; left: 60px; right: 60px; display: flex; justify-content: center; align-items: center;">
+                        <div style="background-color: white; border: 1px solid #ddd; border-radius: 30px; width: 160px; height: 50px; display: flex; justify-content: center; align-items: center; gap: 5px;">
+                            <span>选择全部</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="screen-label">视频页面（优化版）</div>
+            </div>
+            
+            <!-- 照片整理手势页面（优化版） -->
+            <div class="phone-frame">
+                <div class="screen" style="padding: 0;">
+                    <div id="gestureScreen" style="position: relative; height: 100%;">
+                        <img src="https://source.unsplash.com/random/400x800?stockchart" id="currentImage" style="width: 100%; height: 100%; object-fit: cover;">
+                        
+                        <div style="position: absolute; top: 0; left: 0; right: 0; background: rgba(0,0,0,0.3); color: white; padding: 20px; display: flex; justify-content: space-between; align-items: center;">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <i class="fas fa-chevron-left"></i>
+                                <div>
+                                    <div style="font-weight: bold;">四月</div>
+                                    <div style="font-size: 12px;"><span id="currentIndex">0</span>/370</div>
+                                </div>
+                            </div>
+                            <div>
+                                <button style="background-color: rgba(255,255,255,0.3); border: none; color: white; border-radius: 25px; padding: 10px 20px;">
+                                    查看相册
+                                </button>
+                            </div>
+                            <div>
+                                <button style="background-color: #0066FF; border: none; color: white; border-radius: 25px; padding: 10px 20px;">
+                                    完成
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- 右划指示 -->
+                        <div id="rightSwipeHint" style="position: absolute; top: 45%; right: 20%; text-align: left; color: white; font-weight: bold; animation: fadeInOut 2s infinite;">
+                            右划查看下一张
+                            <div style="width: 100px; height: 3px; background-color: white; margin-top: 10px; border-radius: 3px;"></div>
+                            <div style="position: absolute; right: -60px; top: 0;">
+                                <svg width="50" height="50" viewBox="0 0 50 50">
+                                    <path d="M10,25 L40,25" stroke="white" stroke-width="3" fill="none"/>
+                                    <path d="M30,15 L40,25 L30,35" stroke="white" stroke-width="3" fill="none"/>
+                                </svg>
+                            </div>
+                        </div>
+                        
+                        <!-- 左划指示 -->
+                        <div id="leftSwipeHint" style="position: absolute; top: 60%; left: 20%; text-align: right; color: white; font-weight: bold; animation: fadeInOut 2s infinite; display: none;">
+                            左划回看上一张
+                            <div style="width: 100px; height: 3px; background-color: white; margin-top: 10px; border-radius: 3px; margin-left: auto;"></div>
+                            <div style="position: absolute; left: -60px; top: 0;">
+                                <svg width="50" height="50" viewBox="0 0 50 50">
+                                    <path d="M40,25 L10,25" stroke="white" stroke-width="3" fill="none"/>
+                                    <path d="M20,15 L10,25 L20,35" stroke="white" stroke-width="3" fill="none"/>
+                                </svg>
+                            </div>
+                        </div>
+                        
+                        <!-- 下拉删除指示 -->
+                        <div id="deleteSwipeHint" style="position: absolute; top: 50%; left: 0; right: 0; text-align: center; color: white; font-weight: bold; animation: slideDown 3s infinite; display: none;">
+                            <div style="position: relative; width: 100%;">
+                                下拉删除
+                                <svg width="40" height="100" viewBox="0 0 40 100" style="position: absolute; left: 50%; transform: translateX(-50%); top: 30px;">
+                                    <path d="M20,0 L20,80" stroke="white" stroke-width="3" fill="none"/>
+                                    <path d="M10,70 L20,80 L30,70" stroke="white" stroke-width="3" fill="none"/>
+                                </svg>
+                                <div style="width: 80px; height: 80px; border-radius: 40px; background-color: #FF0000; display: flex; justify-content: center; align-items: center; margin: 100px auto 0;">
+                                    <i class="fas fa-trash fa-2x"></i>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 右划覆盖层 - 手势交互区域 -->
+                        <div id="rightSwipeOverlay" style="position: absolute; top: 0; right: 0; width: 50%; height: 100%; opacity: 0;"></div>
+                        
+                        <!-- 左划覆盖层 - 手势交互区域 -->
+                        <div id="leftSwipeOverlay" style="position: absolute; top: 0; left: 0; width: 50%; height: 100%; opacity: 0;"></div>
+                        
+                        <!-- 下拉覆盖层 - 手势交互区域 -->
+                        <div id="deleteSwipeOverlay" style="position: absolute; top: 0; left: 25%; right: 25%; height: 100%; opacity: 0;"></div>
+                        
+                        <div style="position: absolute; bottom: 0; left: 0; right: 0; display: flex; justify-content: space-around; padding: 20px; background: linear-gradient(transparent, rgba(0,0,0,0.7));">
+                            <div style="width: 50px; height: 50px; border-radius: 25px; background-color: #FFCC00; display: flex; justify-content: center; align-items: center; color: white;">
+                                <i class="fas fa-undo"></i>
+                            </div>
+                            <div style="width: 50px; height: 50px; border-radius: 25px; background-color: #FF0000; display: flex; justify-content: center; align-items: center; color: white;">
+                                <i class="fas fa-trash"></i>
+                            </div>
+                            <div style="width: 50px; height: 50px; border-radius: 25px; background-color: #0066FF; display: flex; justify-content: center; align-items: center; color: white;">
+                                <i class="fas fa-arrow-right"></i>
+                            </div>
+                            <div style="width: 50px; height: 50px; border-radius: 25px; background-color: #4CAF50; display: flex; justify-content: center; align-items: center; color: white;">
+                                <i class="fas fa-plus"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="screen-label">照片整理手势页面（优化版）</div>
+            </div>
+            
+            <!-- 整理完成页面（优化版） -->
+            <div class="phone-frame">
+                <div class="screen blue-bg" style="padding: 20px; position: relative; overflow: hidden;">
+                    <!-- 创建烟花效果容器 -->
+                    <div class="fireworks-container" id="fireworksContainer">
+                        <!-- 烟花效果将通过JavaScript动态生成 -->
+                    </div>
+                    
+                    <div class="status-bar">
+                        <span style="color: white;">19:47</span>
+                        <div>
+                            <i class="fas fa-signal" style="color: white;"></i>
+                            <i class="fas fa-wifi" style="color: white;"></i>
+                            <span style="background-color: #FFC107; color: black; border-radius: 4px; padding: 0 4px;">57</span>
+                        </div>
+                    </div>
+                    
+                    <div style="text-align: center; color: white; margin-top: 50px;">
+                        <h1 style="font-size: 32px; font-weight: bold; text-decoration: underline;">整理完成</h1>
+                        <div style="margin-top: 10px; font-size: 16px;">共整理了31个文件</div>
+                        <div style="margin-top: 5px; font-size: 14px;">释放了 <span style="font-weight: bold; font-size: 18px;">45.8MB</span> 空间</div>
+                    </div>
+                    
+                    <div style="margin-top: 40px;">
+                        <div class="completion-card" style="position: relative;">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0iIzk5OSIgZD0iTTE5LDRINUMzLjg5LDQgMyw0Ljg5IDMsNlYxOUEyLDIgMCAwLDAgNSwyMUgxOUEyLDIgMCAwLDAgMjEsMTlWNkMyMSw0Ljg5IDIwLjEsNCAxOSw0TTE5LDEzLjYxTDEyLDE5LjhWMTMuNjFMMTksOC40MVYxMy42MVoiIC8+PC9zdmc+" alt="Trash icon" style="width: 40px; height: 40px;">
+                    <div style="text-align: left;">
+                        <div style="font-weight: bold;">3 张照片已放入废纸篓</div>
+                        <div style="font-size: 12px; color: #999;">别忘记到系统相册的「最近删除」中彻底删除</div>
+                    </div>
+                </div>
+                <!-- 添加小闪光效果 -->
+                <div class="sparkle" style="position: absolute; top: -10px; right: -10px;">
+                    <i class="fas fa-sparkles" style="color: #FFD700; font-size: 24px; animation: pulse 2s infinite;"></i>
+                </div>
+            </div>
+            
+            <div class="completion-card" style="position: relative;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0iI0ZGQzEwNyIgZD0iTTIxLDE2LjVDMjEsMTYuODggMjAuNzksMTcuMjEgMjAuNDcsMTcuM0wxNS4xMiwxOUwxMi42NywxMy45NUwxNy43MSwxMy43OUwyMCwxNi4zNVYxMEgxMlYyMUgyQzEuNDUsMjEgMSwyMC41NSAxLDIwVjVDMSw0LjQ1IDEuNDUsNCAxLDRIMWwyMyw4LjY0TDI0LDEwLjY4VjE2LjVDMjQsMTYuODcgMjMuNzksMTcuMiAyMy40OCwxNy4zbC0xLjAzLDAuMzRMMjEsMTYuNVoiIC8+PC9zdmc+" alt="Muscle icon" style="width: 40px; height: 40px;">
+                    <div style="text-align: left;">
+                        <div style="font-weight: bold;">再接再厉</div>
+                        <div style="font-size: 12px; color: #999;">共整理2025年四月相册的3个项目</div>
+                    </div>
+                </div>
+                <!-- 添加肌肉弯曲动画 -->
+                <div class="muscle-flex" style="position: absolute; top: 50%; right: 10px; transform: translateY(-50%);">
+                    <img src="https://i.imgur.com/lRCFVqR.png" alt="Muscle flex" style="width: 30px; height: 30px; animation: muscleFlexing 2s infinite;">
+                </div>
+            </div>
+            
+            <!-- 新增整理趋势卡片 -->
+            <div class="completion-card">
+                <div style="text-align: center; margin-bottom: 10px;">
+                    <div style="font-weight: bold;">整理趋势</div>
+                    <div style="font-size: 12px; color: #999;">本周已整理 89 个文件</div>
+                </div>
+                <div style="height: 40px; background-color: #f5f5f5; border-radius: 8px; position: relative; overflow: hidden;">
+                    <div style="position: absolute; top: 0; left: 0; height: 100%; width: 65%; background-color: #0066FF; border-radius: 8px;"></div>
+                    <div style="position: absolute; top: 0; left: 0; height: 100%; width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 0 10px;">
+                        <span style="color: white; font-size: 12px; font-weight: bold;">65%</span>
+                        <span style="color: #666; font-size: 12px;">目标: 100%</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 新增奖章卡片 -->
+            <div class="completion-card" style="background: linear-gradient(135deg, #FFF6E0, #FFF);">
+                <div style="text-align: center;">
+                    <div style="margin-bottom: 10px;">
+                        <i class="fas fa-medal" style="color: #FFD700; font-size: 30px; animation: swing 2s infinite;"></i>
+                    </div>
+                    <div style="font-weight: bold; margin-bottom: 5px;">获得"清理达人"徽章!</div>
+                    <div style="font-size: 12px; color: #999;">连续5天进行照片整理</div>
+                </div>
+            </div>
+        </div>
+        
+        <div style="position: absolute; bottom: 40px; left: 0; right: 0; display: flex; justify-content: center;">
+            <button style="background-color: white; border: none; color: #0066FF; border-radius: 25px; padding: 15px 60px; font-weight: bold; width: 90%;">
+                回首页
+            </button>
+        </div>
+        
+        <!-- 添加分享按钮 -->
+        <div style="position: absolute; bottom: 100px; left: 0; right: 0; display: flex; justify-content: center;">
+            <button style="background-color: rgba(255,255,255,0.2); border: 1px solid white; color: white; border-radius: 25px; padding: 10px 30px; font-size: 14px;">
+                <i class="fas fa-share-alt" style="margin-right: 5px;"></i> 分享我的成就
+            </button>
+        </div>
+        
+        <!-- 震动反馈提示 -->
+        <div style="position: absolute; top: 20px; right: 20px; background-color: rgba(255,255,255,0.2); border-radius: 50%; width: 40px; height: 40px; display: flex; justify-content: center; align-items: center;">
+            <i class="fas fa-bell" style="color: white; animation: vibrate 0.5s infinite;"></i>
+        </div>
+    </div>
+    <div class="screen-label">整理完成页面（优化版）</div>
+</div>
+
+<!-- 照片查看页面（优化版） -->
+<div class="phone-frame">
+    <div class="screen" style="padding: 0; position: relative;">
+        <div style="position: relative; height: 100%; display: flex; flex-direction: column;">
+            <div style="position: absolute; top: 0; left: 0; right: 0; z-index: 10;">
+                <div class="status-bar" style="padding: 10px 20px;">
+                    <span>19:47</span>
+                    <div>
+                        <i class="fas fa-signal"></i>
+                        <i class="fas fa-wifi"></i>
+                        <span style="background-color: #FFC107; color: black; border-radius: 4px; padding: 0 4px;">57</span>
+                    </div>
+                </div>
+                
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 20px;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <i class="fas fa-chevron-left"></i>
+                        <div>
+                            <div style="font-weight: bold;">四月</div>
+                            <div style="font-size: 12px;">1/370</div>
+                        </div>
+                    </div>
+                    <div>
+                        <button style="background-color: #F0F0F0; border: none; color: #333; border-radius: 25px; padding: 10px 20px;">
+                            查看相册
+                        </button>
+                    </div>
+                    <div>
+                        <button style="background-color: #0066FF; border: none; color: white; border-radius: 25px; padding: 10px 20px;">
+                            完成
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="flex-grow: 1; position: relative;">
+                <img src="https://source.unsplash.com/random/400x800?food" style="width: 100%; height: 100%; object-fit: contain; background-color: black;">
+                
+                <div style="position: absolute; bottom: 20px; right: 20px;">
+                    <div style="width: 40px; height: 40px; border-radius: 20px; background-color: #0066FF; display: flex; justify-content: center; align-items: center; color: white;">
+                        <i class="fas fa-info"></i>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="background-color: white; padding: 20px;">
+                <div style="margin-bottom: 20px;">
+                    <div style="color: #333; font-size: 16px;">2025年4月23日 周三, 23:09</div>
+                    <div style="color: #999; font-size: 14px;">IMG_7591</div>
+                </div>
+                
+                <div style="background-color: #F5F5F5; border-radius: 10px; padding: 15px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <div style="font-weight: bold;">无相机信息</div>
+                        <div style="background-color: #DDD; padding: 3px 10px; border-radius: 5px; font-size: 12px;">JPG</div>
+                    </div>
+                    <div style="color: #999; margin-bottom: 10px;">无镜头信息</div>
+                    <div style="color: #999;">3 MP · 1080 × 1920 · 364 KB</div>
+                </div>
+            </div>
+            
+            <div style="display: flex; justify-content: space-around; padding: 20px; background-color: white; border-top: 1px solid #eee;">
+                <div style="display: flex; flex-direction: column; align-items: center; color: #FFCC00;">
+                    <i class="fas fa-undo"></i>
+                </div>
+                <div style="display: flex; flex-direction: column; align-items: center; color: #FF0000;">
+                    <i class="fas fa-trash"></i>
+                </div>
+                <div style="display: flex; flex-direction: column; align-items: center; color: #0066FF;">
+                    <i class="fas fa-arrow-right"></i>
+                </div>
+                <div style="display: flex; flex-direction: column; align-items: center; color: #0066FF;">
+                    <i class="fas fa-plus-circle"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="screen-label">照片查看页面（优化版）</div>
+</div>
+
+<!-- 继续保留原型中的其它页面 -->
+<!-- ... existing code ... -->
+        </div>
+    </div>
+    
+    <script>
+        // 等待DOM加载完成
+        document.addEventListener('DOMContentLoaded', function() {
+            const gestureScreen = document.getElementById('gestureScreen');
+            if (!gestureScreen) return;
+            
+            const rightSwipeOverlay = document.getElementById('rightSwipeOverlay');
+            const leftSwipeOverlay = document.getElementById('leftSwipeOverlay');
+            const deleteSwipeOverlay = document.getElementById('deleteSwipeOverlay');
+            
+            const rightSwipeHint = document.getElementById('rightSwipeHint');
+            const leftSwipeHint = document.getElementById('leftSwipeHint');
+            const deleteSwipeHint = document.getElementById('deleteSwipeHint');
+            
+            const currentImage = document.getElementById('currentImage');
+            const currentIndex = document.getElementById('currentIndex');
+            
+            // 示例图片
+            const images = [
+                'https://source.unsplash.com/random/400x800?stockchart',
+                'https://source.unsplash.com/random/400x800?nature',
+                'https://source.unsplash.com/random/400x800?city',
+                'https://source.unsplash.com/random/400x800?people'
+            ];
+            
+            let index = 0;
+            let activeHint = 'right'; // 初始活动提示
+            
+            // 循环显示提示
+            function rotateHints() {
+                if (activeHint === 'right') {
+                    rightSwipeHint.style.display = 'none';
+                    leftSwipeHint.style.display = 'block';
+                    deleteSwipeHint.style.display = 'none';
+                    activeHint = 'left';
+                } else if (activeHint === 'left') {
+                    rightSwipeHint.style.display = 'none';
+                    leftSwipeHint.style.display = 'none';
+                    deleteSwipeHint.style.display = 'block';
+                    activeHint = 'delete';
+                } else {
+                    rightSwipeHint.style.display = 'block';
+                    leftSwipeHint.style.display = 'none';
+                    deleteSwipeHint.style.display = 'none';
+                    activeHint = 'right';
+                }
+            }
+            
+            // 每5秒轮换一次提示
+            setInterval(rotateHints, 5000);
+            
+            // 右划处理
+            rightSwipeOverlay.addEventListener('click', function() {
+                if (index < images.length - 1) {
+                    index++;
+                    currentImage.src = images[index];
+                    currentIndex.textContent = index;
+                    
+                    // 添加视觉反馈
+                    this.classList.add('swipe-active');
+                    setTimeout(() => {
+                        this.classList.remove('swipe-active');
+                    }, 300);
+                }
+            });
+            
+            // 左划处理
+            leftSwipeOverlay.addEventListener('click', function() {
+                if (index > 0) {
+                    index--;
+                    currentImage.src = images[index];
+                    currentIndex.textContent = index;
+                    
+                    // 添加视觉反馈
+                    this.classList.add('swipe-active');
+                    setTimeout(() => {
+                        this.classList.remove('swipe-active');
+                    }, 300);
+                }
+            });
+            
+            // 下拉删除处理
+            deleteSwipeOverlay.addEventListener('click', function() {
+                // 显示删除动画
+                currentImage.style.transition = 'transform 0.5s, opacity 0.5s';
+                currentImage.style.transform = 'translateY(100%)';
+                currentImage.style.opacity = '0';
+                
+                // 重置
+                setTimeout(() => {
+                    if (index < images.length - 1) {
+                        index++;
+                    } else if (images.length > 1) {
+                        index = 0;
+                    }
+                    
+                    // 延迟一下再重置，以便看到动画
+                    setTimeout(() => {
+                        currentImage.style.transition = 'none';
+                        currentImage.style.transform = 'translateY(0)';
+                        currentImage.style.opacity = '1';
+                        currentImage.src = images[index];
+                        currentIndex.textContent = index;
+                        
+                        // 恢复过渡效果
+                        setTimeout(() => {
+                            currentImage.style.transition = 'transform 0.5s, opacity 0.5s';
+                        }, 50);
+                    }, 500);
+                }, 500);
+            });
+            
+            // 烟花特效
+            const fireworksContainer = document.getElementById('fireworksContainer');
+            if (fireworksContainer) {
+                // 创建烟花效果
+                createFireworks(fireworksContainer);
+            }
+            
+            // 创建烟花效果函数
+            function createFireworks(container) {
+                const colors = ['#FF0000', '#FFD700', '#00FF00', '#0000FF', '#FF00FF', '#00FFFF', '#FFFFFF'];
+                
+                // 生成多个烟花
+                for (let i = 0; i < 30; i++) {
+                    setTimeout(() => {
+                        const x = Math.random() * 100;
+                        const initialY = 100 + Math.random() * 40;
+                        const finalY = 20 + Math.random() * 30;
+                        const size = 5 + Math.random() * 15;
+                        const color = colors[Math.floor(Math.random() * colors.length)];
+                        const duration = 0.5 + Math.random() * 1;
+                        
+                        const firework = document.createElement('div');
+                        firework.className = 'firework';
+                        firework.style.setProperty('--x', `${x}%`);
+                        firework.style.setProperty('--initialY', `${initialY}%`);
+                        firework.style.setProperty('--finalY', `${finalY}%`);
+                        firework.style.setProperty('--size', `${size}px`);
+                        firework.style.setProperty('--duration', `${duration}s`);
+                        firework.style.backgroundColor = color;
+                        firework.style.boxShadow = `0 0 ${size/2}px ${color}`;
+                        
+                        container.appendChild(firework);
+                        
+                        // 动画结束后移除元素
+                        setTimeout(() => {
+                            container.removeChild(firework);
+                        }, duration * 1000);
+                    }, i * 100); // 随时间依次发射烟花
+                }
+                
+                // 每3秒重新生成一波烟花
+                setTimeout(() => {
+                    createFireworks(container);
+                }, 3000);
+            }
+            
+            // 模拟震动反馈
+            const vibrateButton = document.querySelector('.fa-bell');
+            if (vibrateButton) {
+                vibrateButton.addEventListener('click', function() {
+                    // 如果浏览器支持震动API
+                    if ('vibrate' in navigator) {
+                        navigator.vibrate([200, 100, 200]);
+                        alert('震动反馈已触发！在真实设备上，您会感受到震动效果');
+                    } else {
+                        alert('您的设备不支持震动功能');
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html> 
