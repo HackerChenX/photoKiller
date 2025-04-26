@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/photo.dart';
 import '../models/photo_group.dart';
 import '../models/cleanup_result.dart';
+import '../models/album.dart';
 import '../services/photo_service.dart';
 
 class PhotoProvider extends ChangeNotifier {
@@ -12,6 +13,11 @@ class PhotoProvider extends ChangeNotifier {
   List<Photo> _allPhotos = [];
   List<Photo> _screenshots = [];
   List<Photo> _videos = [];
+  List<Photo> _blurryPhotos = [];
+  
+  // 相册
+  List<Album> _allAlbums = [];
+  List<Album> _emptyAlbums = [];
   
   // 照片组
   List<PhotoGroup> _duplicateGroups = [];
@@ -37,6 +43,9 @@ class PhotoProvider extends ChangeNotifier {
   List<Photo> get allPhotos => _allPhotos;
   List<Photo> get screenshots => _screenshots;
   List<Photo> get videos => _videos;
+  List<Photo> get blurryPhotos => _blurryPhotos;
+  List<Album> get allAlbums => _allAlbums;
+  List<Album> get emptyAlbums => _emptyAlbums;
   List<PhotoGroup> get duplicateGroups => _duplicateGroups;
   List<PhotoGroup> get similarGroups => _similarGroups;
   List<Photo> get selectedPhotos => _selectedPhotos;
@@ -53,8 +62,49 @@ class PhotoProvider extends ChangeNotifier {
   // 各类型照片数量
   int get screenshotCount => _screenshots.length;
   int get videoCount => _videos.length;
+  int get blurryCount => _blurryPhotos.length;
   int get duplicateCount => _duplicateGroups.fold<int>(0, (sum, group) => sum + group.photos.length - 1);
   int get similarCount => _similarGroups.fold<int>(0, (sum, group) => sum + group.photos.length - 1);
+  int get emptyAlbumCount => _emptyAlbums.length;
+  
+  // 选中的相册数量
+  int get selectedAlbumCount => _emptyAlbums.where((album) => album.isSelected).length;
+  
+  // 是否全部相册已选中
+  bool get isAllAlbumsSelected => 
+      _emptyAlbums.isNotEmpty && 
+      _emptyAlbums.every((album) => album.isSelected);
+  
+  // 选中的照片数量
+  int get selectedCount => _selectedPhotos.length;
+  
+  // 是否全部照片已选中
+  bool get isAllSelected {
+    if (_screenshots.isEmpty) return false;
+    
+    // 检查全部截图是否都被选中
+    for (var photo in _screenshots) {
+      if (!_selectedPhotos.any((p) => p.id == photo.id)) {
+        return false;
+      }
+    }
+    
+    return true;
+  }
+  
+  // 是否所有模糊照片都被选中
+  bool get isAllBlurrySelected {
+    if (_blurryPhotos.isEmpty) return false;
+    
+    // 检查是否所有模糊照片都被选中
+    for (var photo in _blurryPhotos) {
+      if (!_selectedPhotos.any((p) => p.id == photo.id)) {
+        return false;
+      }
+    }
+    
+    return true;
+  }
   
   // 初始化加载所有照片
   Future<void> loadAllPhotos() async {
@@ -90,6 +140,19 @@ class PhotoProvider extends ChangeNotifier {
       notifyListeners();
     } catch (e) {
       debugPrint('加载视频失败: $e');
+    } finally {
+      _setLoading(false);
+    }
+  }
+  
+  // 加载模糊照片
+  Future<void> loadBlurryPhotos() async {
+    _setLoading(true, '分析照片质量中...');
+    try {
+      _blurryPhotos = await _photoService.getBlurryPhotos();
+      notifyListeners();
+    } catch (e) {
+      debugPrint('加载模糊照片失败: $e');
     } finally {
       _setLoading(false);
     }
@@ -136,10 +199,25 @@ class PhotoProvider extends ChangeNotifier {
       await loadAllPhotos();
       await loadScreenshots();
       await loadVideos();
+      await loadEmptyAlbums();
+      await loadBlurryPhotos();
       await findDuplicatePhotos();
       await findSimilarPhotos();
     } catch (e) {
       debugPrint('加载所有分类失败: $e');
+    } finally {
+      _setLoading(false);
+    }
+  }
+  
+  // 加载空相册
+  Future<void> loadEmptyAlbums() async {
+    _setLoading(true, '加载空相册中...');
+    try {
+      _emptyAlbums = await _photoService.getEmptyAlbums();
+      notifyListeners();
+    } catch (e) {
+      debugPrint('加载空相册失败: $e');
     } finally {
       _setLoading(false);
     }
@@ -274,20 +352,33 @@ class PhotoProvider extends ChangeNotifier {
     notifyListeners();
   }
   
-  // 选择或取消选择单张照片
-  void togglePhotoSelection(Photo photo, bool isSelected) {
-    final index = _selectedPhotos.indexWhere((p) => p.id == photo.id);
-    
-    if (isSelected && index == -1) {
-      _selectedPhotos.add(photo.copyWith(isSelected: true));
-    } else if (!isSelected && index != -1) {
-      _selectedPhotos.removeAt(index);
+  // 全选/取消全选照片
+  void toggleSelectAll() {
+    if (isAllSelected) {
+      // 取消全选
+      _selectedPhotos.clear();
+    } else {
+      // 全选 (截图)
+      _selectedPhotos = List.from(_screenshots);
     }
     
     notifyListeners();
   }
   
-  // 全选或取消全选组内照片
+  // 切换照片选择状态
+  void togglePhotoSelection(Photo photo, bool isSelected) {
+    if (isSelected) {
+      if (!_selectedPhotos.any((p) => p.id == photo.id)) {
+        _selectedPhotos.add(photo);
+      }
+    } else {
+      _selectedPhotos.removeWhere((p) => p.id == photo.id);
+    }
+    
+    notifyListeners();
+  }
+  
+  // 全选或取消选择单张照片
   void selectAllInGroup(PhotoGroup group, bool isSelected) {
     if (group.groupType == PhotoType.duplicate) {
       final index = _duplicateGroups.indexWhere((g) => g.id == group.id);
@@ -410,6 +501,104 @@ class PhotoProvider extends ChangeNotifier {
     });
     
     return firstPhotoByMonth;
+  }
+  
+  // 选择/取消选择相册
+  void toggleAlbumSelection(Album album, bool isSelected) {
+    final index = _emptyAlbums.indexWhere((a) => a.id == album.id);
+    if (index != -1) {
+      _emptyAlbums[index] = _emptyAlbums[index].copyWith(isSelected: isSelected);
+      notifyListeners();
+    }
+  }
+  
+  // 全选/取消全选相册
+  void toggleSelectAllAlbums() {
+    final bool selectAll = !isAllAlbumsSelected;
+    _emptyAlbums = _emptyAlbums.map((album) => 
+      album.copyWith(isSelected: selectAll)
+    ).toList();
+    notifyListeners();
+  }
+  
+  // 删除单个相册
+  Future<void> deleteSingleAlbum(Album album) async {
+    _setLoading(true, '删除相册中...');
+    try {
+      final success = await _photoService.deleteAlbum(album.id);
+      if (success) {
+        _emptyAlbums.removeWhere((a) => a.id == album.id);
+        
+        // 更新最后清理结果
+        _lastCleanupResult = CleanupResult(
+          totalPhotos: 1,
+          deletedPhotos: 1,
+          savedBytes: 0,
+          cleanupTime: DateTime.now(),
+          categoryCount: {'album': 1},
+        );
+        
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('删除相册失败: $e');
+    } finally {
+      _setLoading(false);
+    }
+  }
+  
+  // 删除选中的相册
+  Future<CleanupResult> deleteSelectedAlbums() async {
+    _setLoading(true, '删除相册中...');
+    try {
+      final selectedAlbums = _emptyAlbums.where((album) => album.isSelected).toList();
+      
+      if (selectedAlbums.isEmpty) {
+        return CleanupResult(
+          totalPhotos: 0,
+          deletedPhotos: 0,
+          savedBytes: 0,
+          cleanupTime: DateTime.now(),
+          categoryCount: {},
+        );
+      }
+      
+      final result = await _photoService.deleteAlbums(selectedAlbums);
+      
+      // 更新最后的清理结果
+      _lastCleanupResult = result;
+      
+      // 从列表中移除已删除的相册
+      _emptyAlbums.removeWhere((album) => album.isSelected);
+      
+      notifyListeners();
+      
+      return result;
+    } catch (e) {
+      debugPrint('删除相册失败: $e');
+      rethrow;
+    } finally {
+      _setLoading(false);
+    }
+  }
+  
+  // 全选/取消全选模糊照片
+  void toggleSelectAllBlurryPhotos() {
+    if (isAllBlurrySelected) {
+      // 取消全选
+      _selectedPhotos.removeWhere((p) => 
+        _blurryPhotos.any((bp) => bp.id == p.id)
+      );
+    } else {
+      // 全选模糊照片
+      for (var photo in _blurryPhotos) {
+        if (!_selectedPhotos.any((p) => p.id == photo.id)) {
+          _selectedPhotos.add(photo);
+        }
+      }
+    }
+    
+    notifyListeners();
   }
   
   // 设置加载状态

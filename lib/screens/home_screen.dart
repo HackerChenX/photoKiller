@@ -1,18 +1,25 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../constants/colors.dart';
 import '../constants/strings.dart';
 import '../constants/text_styles.dart';
 import '../providers/photo_provider.dart';
 import '../widgets/loading_indicator.dart';
+import '../widgets/gesture_tutorial.dart' hide GestureTutorialDemo;
 import '../models/photo.dart';
+import '../services/tutorial_service.dart';
 import 'screenshots_screen.dart';
 import 'videos_screen.dart';
 import 'similar_photos_screen.dart';
 import 'duplicate_photos_screen.dart';
 import 'settings_screen.dart';
 import 'photo_detail_screen.dart';
+import 'empty_albums_screen.dart';
+import 'blurry_photos_screen.dart';
+import 'timeline_screen.dart';
+import 'gesture_tutorial_demo.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -22,10 +29,24 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  bool _showTutorial = false;
+
   @override
   void initState() {
     super.initState();
     _loadData();
+    _checkIfTutorialNeeded();
+  }
+
+  Future<void> _checkIfTutorialNeeded() async {
+    // 使用TutorialService检查是否需要显示主页教程
+    final hasSeenTutorial = await TutorialService.hasSeenMainTutorial();
+    
+    if (!hasSeenTutorial) {
+      setState(() {
+        _showTutorial = true;
+      });
+    }
   }
 
   Future<void> _loadData() async {
@@ -42,6 +63,15 @@ class _HomeScreenState extends State<HomeScreen> {
         elevation: 0,
         actions: [
           IconButton(
+            icon: const Icon(Icons.gesture),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const GestureTutorialDemo()),
+              );
+            },
+          ),
+          IconButton(
             icon: const Icon(Icons.settings),
             onPressed: () {
               Navigator.push(
@@ -52,119 +82,182 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      body: Consumer<PhotoProvider>(
-        builder: (context, photoProvider, child) {
-          if (photoProvider.isLoading) {
-            return LoadingIndicator(message: photoProvider.loadingMessage);
-          }
+      body: Stack(
+        children: [
+          Consumer<PhotoProvider>(
+            builder: (context, photoProvider, child) {
+              if (photoProvider.isLoading) {
+                return LoadingIndicator(message: photoProvider.loadingMessage);
+              }
 
-          return RefreshIndicator(
-            onRefresh: _loadData,
-            child: SingleChildScrollView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // 按月份分组的照片滑动视图
-                  _buildMonthlyPhotosSection(photoProvider),
-                  
-                  // 快捷整理部分
-                  Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          '快捷整理',
-                          style: AppTextStyles.headline2,
+              return RefreshIndicator(
+                onRefresh: _loadData,
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // 按月份分组的照片滑动视图
+                      _buildMonthlyPhotosSection(photoProvider),
+                      
+                      // 快捷整理部分
+                      Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              '快捷整理',
+                              style: AppTextStyles.headline2,
+                            ),
+                            const SizedBox(height: 12),
+                            
+                            // 使用网格布局，每行两个
+                            GridView.builder(
+                              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 2,
+                                crossAxisSpacing: 12,
+                                mainAxisSpacing: 12,
+                                mainAxisExtent: 120, // 固定高度
+                              ),
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              itemCount: 6,
+                              itemBuilder: (context, index) {
+                                switch (index) {
+                                  case 0:
+                                    return _buildQuickCleanupCard(
+                                      title: '截屏',
+                                      count: photoProvider.screenshotCount,
+                                      icon: Icons.screenshot,
+                                      color: Colors.orange,
+                                      onTap: () => Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => const ScreenshotsScreen(),
+                                        ),
+                                      ),
+                                    );
+                                  case 1:
+                                    return _buildQuickCleanupCard(
+                                      title: '视频',
+                                      count: photoProvider.videoCount,
+                                      icon: Icons.videocam,
+                                      color: Colors.red,
+                                      onTap: () => Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => const VideosScreen(),
+                                        ),
+                                      ),
+                                    );
+                                  case 2:
+                                    return _buildQuickCleanupCard(
+                                      title: '相似照片',
+                                      count: photoProvider.similarCount,
+                                      icon: Icons.compare,
+                                      color: Colors.green,
+                                      onTap: () => Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => const SimilarPhotosScreen(),
+                                        ),
+                                      ),
+                                    );
+                                  case 3:
+                                    return _buildQuickCleanupCard(
+                                      title: '重复项',
+                                      count: photoProvider.duplicateCount,
+                                      icon: Icons.copy,
+                                      color: Colors.blue,
+                                      onTap: () => Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => const DuplicatePhotosScreen(),
+                                        ),
+                                      ),
+                                    );
+                                  case 4:
+                                    return _buildQuickCleanupCard(
+                                      title: '空相册',
+                                      count: photoProvider.emptyAlbumCount,
+                                      icon: Icons.folder_off,
+                                      color: Colors.purple,
+                                      onTap: () => Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => const EmptyAlbumsScreen(),
+                                        ),
+                                      ),
+                                    );
+                                  case 5:
+                                    return _buildQuickCleanupCard(
+                                      title: '模糊照片',
+                                      count: photoProvider.blurryCount,
+                                      icon: Icons.lens_blur,
+                                      color: Colors.teal,
+                                      onTap: () => Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => const BlurryPhotosScreen(),
+                                        ),
+                                      ),
+                                    );
+                                  default:
+                                    return const SizedBox();
+                                }
+                              },
+                            ),
+                            
+                            const SizedBox(height: 24),
+                            
+                            // 最近整理结果
+                            if (photoProvider.lastCleanupResult != null)
+                              _buildLastCleanupCard(photoProvider),
+                          ],
                         ),
-                        const SizedBox(height: 12),
-                        
-                        // 使用网格布局，每行两个
-                        GridView.builder(
-                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2,
-                            crossAxisSpacing: 12,
-                            mainAxisSpacing: 12,
-                            mainAxisExtent: 120, // 固定高度
-                          ),
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: 4,
-                          itemBuilder: (context, index) {
-                            switch (index) {
-                              case 0:
-                                return _buildQuickCleanupCard(
-                                  title: '截屏',
-                                  count: photoProvider.screenshotCount,
-                                  icon: Icons.screenshot,
-                                  color: Colors.orange,
-                                  onTap: () => Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => const ScreenshotsScreen(),
-                                    ),
-                                  ),
-                                );
-                              case 1:
-                                return _buildQuickCleanupCard(
-                                  title: '视频',
-                                  count: photoProvider.videoCount,
-                                  icon: Icons.videocam,
-                                  color: Colors.red,
-                                  onTap: () => Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => const VideosScreen(),
-                                    ),
-                                  ),
-                                );
-                              case 2:
-                                return _buildQuickCleanupCard(
-                                  title: '相似照片',
-                                  count: photoProvider.similarCount,
-                                  icon: Icons.compare,
-                                  color: Colors.green,
-                                  onTap: () => Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => const SimilarPhotosScreen(),
-                                    ),
-                                  ),
-                                );
-                              case 3:
-                                return _buildQuickCleanupCard(
-                                  title: '重复项',
-                                  count: photoProvider.duplicateCount,
-                                  icon: Icons.copy,
-                                  color: Colors.blue,
-                                  onTap: () => Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => const DuplicatePhotosScreen(),
-                                    ),
-                                  ),
-                                );
-                              default:
-                                return const SizedBox();
-                            }
-                          },
-                        ),
-                        
-                        const SizedBox(height: 24),
-                        
-                        // 最近整理结果
-                        if (photoProvider.lastCleanupResult != null)
-                          _buildLastCleanupCard(photoProvider),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+              );
+            },
+          ),
+          
+          // 显示手势教程
+          if (_showTutorial)
+            GestureTutorialSequence(
+              tutorialSteps: [
+                {
+                  'direction': GestureDirection.up,
+                  'text': '向上滑动可以查看更多内容',
+                },
+                {
+                  'direction': GestureDirection.left,
+                  'text': '向左滑动可以切换到下一张照片',
+                },
+                {
+                  'direction': GestureDirection.right,
+                  'text': '向右滑动可以返回上一张照片',
+                },
+                {
+                  'direction': GestureDirection.down,
+                  'text': '在照片详情页，向下滑动可以删除照片',
+                },
+                {
+                  'direction': GestureDirection.tap,
+                  'text': '点击照片可以查看详情',
+                },
+              ],
+              onComplete: () {
+                setState(() {
+                  _showTutorial = false;
+                });
+                TutorialService.markMainTutorialAsSeen();
+              },
             ),
-          );
-        },
+        ],
       ),
     );
   }
@@ -194,7 +287,12 @@ class _HomeScreenState extends State<HomeScreen> {
               const Spacer(),
               TextButton(
                 onPressed: () {
-                  // TODO: 查看所有月份
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const TimelineScreen(viewType: TimelineViewType.thisDay),
+                    ),
+                  );
                 },
                 child: const Text(
                   '往年今日',
@@ -203,7 +301,12 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               TextButton(
                 onPressed: () {
-                  // TODO: 查看最近添加
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const TimelineScreen(viewType: TimelineViewType.recentlyAdded),
+                    ),
+                  );
                 },
                 child: const Text(
                   '最近新增',

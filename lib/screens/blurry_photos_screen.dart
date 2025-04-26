@@ -10,38 +10,30 @@ import '../widgets/photo_grid.dart';
 import 'photo_detail_screen.dart';
 import 'cleanup_result_screen.dart';
 
-class ScreenshotsScreen extends StatefulWidget {
-  const ScreenshotsScreen({Key? key}) : super(key: key);
+class BlurryPhotosScreen extends StatefulWidget {
+  const BlurryPhotosScreen({Key? key}) : super(key: key);
 
   @override
-  State<ScreenshotsScreen> createState() => _ScreenshotsScreenState();
+  State<BlurryPhotosScreen> createState() => _BlurryPhotosScreenState();
 }
 
-class _ScreenshotsScreenState extends State<ScreenshotsScreen> {
+class _BlurryPhotosScreenState extends State<BlurryPhotosScreen> {
   bool _selectionMode = false;
-  // 添加时间筛选
-  String _timeFilter = 'all'; // 'all', '15days', '30days', '180days'
   
   @override
   void initState() {
     super.initState();
-    _loadScreenshots();
+    _loadBlurryPhotos();
   }
   
-  Future<void> _loadScreenshots() async {
+  Future<void> _loadBlurryPhotos() async {
     final photoProvider = Provider.of<PhotoProvider>(context, listen: false);
-    await photoProvider.loadScreenshots();
+    await photoProvider.loadBlurryPhotos();
   }
   
   void _toggleSelectionMode() {
     setState(() {
       _selectionMode = !_selectionMode;
-    });
-  }
-  
-  void _setTimeFilter(String filter) {
-    setState(() {
-      _timeFilter = filter;
     });
   }
   
@@ -65,31 +57,11 @@ class _ScreenshotsScreenState extends State<ScreenshotsScreen> {
     );
   }
   
-  // 根据时间筛选照片
-  List<Photo> _filterPhotosByTime(List<Photo> photos) {
-    final now = DateTime.now();
-    
-    switch (_timeFilter) {
-      case '15days':
-        final cutoffDate = now.subtract(const Duration(days: 15));
-        return photos.where((photo) => photo.createTime.isBefore(cutoffDate)).toList();
-      case '30days':
-        final cutoffDate = now.subtract(const Duration(days: 30));
-        return photos.where((photo) => photo.createTime.isBefore(cutoffDate)).toList();
-      case '180days':
-        final cutoffDate = now.subtract(const Duration(days: 180));
-        return photos.where((photo) => photo.createTime.isBefore(cutoffDate)).toList();
-      case 'all':
-      default:
-        return photos;
-    }
-  }
-  
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text(AppStrings.screenshots),
+        title: const Text('模糊照片'),
         actions: [
           if (!_selectionMode)
             IconButton(
@@ -111,43 +83,53 @@ class _ScreenshotsScreenState extends State<ScreenshotsScreen> {
             return LoadingIndicator(message: photoProvider.loadingMessage);
           }
           
-          // 应用时间筛选
-          final filteredScreenshots = _filterPhotosByTime(photoProvider.screenshots);
+          final blurryPhotos = photoProvider.blurryPhotos;
+          
+          if (blurryPhotos.isEmpty) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(
+                    Icons.lens_blur,
+                    size: 64,
+                    color: Colors.grey,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    '没有模糊照片',
+                    style: AppTextStyles.bodyLarge,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    '您的照片都很清晰',
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: Colors.grey,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }
           
           return Column(
             children: [
-              // 筛选条件部分
+              // 标题栏
               Padding(
                 padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          '共 ${filteredScreenshots.length} 项',
-                          style: AppTextStyles.bodyMedium,
-                        ),
-                      ],
+                    Text(
+                      '共 ${blurryPhotos.length} 项',
+                      style: AppTextStyles.bodyMedium,
                     ),
-                    
-                    const SizedBox(height: 16),
-                    
-                    // 添加时间筛选选项卡
-                    SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Row(
-                        children: [
-                          _buildFilterChip('全部', 'all'),
-                          const SizedBox(width: 8),
-                          _buildFilterChip('15天以上', '15days'),
-                          const SizedBox(width: 8),
-                          _buildFilterChip('30天以上', '30days'),
-                          const SizedBox(width: 8),
-                          _buildFilterChip('180天以上', '180days'),
-                        ],
-                      ),
+                    Row(
+                      children: [
+                        const Text('按模糊度'),
+                        const SizedBox(width: 8),
+                        const Icon(Icons.sort, size: 16),
+                      ],
                     ),
                   ],
                 ),
@@ -156,14 +138,18 @@ class _ScreenshotsScreenState extends State<ScreenshotsScreen> {
               // 照片网格
               Expanded(
                 child: PhotoGrid(
-                  photos: filteredScreenshots,
+                  photos: blurryPhotos,
+                  crossAxisCount: 3,
                   onPhotoTap: _selectionMode
                     ? null
                     : (photo) {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => PhotoDetailScreen(photo: photo),
+                            builder: (context) => PhotoDetailScreen(
+                              photo: photo,
+                              extraInfo: '模糊度: ${(photo.blurScore ?? 0).toStringAsFixed(1)}',
+                            ),
                           ),
                         );
                       },
@@ -200,16 +186,16 @@ class _ScreenshotsScreenState extends State<ScreenshotsScreen> {
                       children: [
                         TextButton.icon(
                           onPressed: () {
-                            photoProvider.toggleSelectAll();
+                            photoProvider.toggleSelectAllBlurryPhotos();
                           },
                           icon: Icon(
-                            photoProvider.isAllSelected
+                            photoProvider.isAllBlurrySelected
                                 ? Icons.check_circle
                                 : Icons.check_circle_outline,
                             color: AppColors.primary,
                           ),
                           label: Text(
-                            photoProvider.isAllSelected
+                            photoProvider.isAllBlurrySelected
                                 ? '取消全选'
                                 : '全选',
                             style: TextStyle(
@@ -234,28 +220,6 @@ class _ScreenshotsScreenState extends State<ScreenshotsScreen> {
               },
             )
           : null,
-    );
-  }
-  
-  Widget _buildFilterChip(String label, String value) {
-    final isSelected = _timeFilter == value;
-    
-    return GestureDetector(
-      onTap: () => _setTimeFilter(value),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary : Colors.grey[200],
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: isSelected ? Colors.white : Colors.black87,
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-          ),
-        ),
-      ),
     );
   }
 } 

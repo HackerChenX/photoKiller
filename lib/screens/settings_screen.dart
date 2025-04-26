@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../constants/colors.dart';
 import '../constants/strings.dart';
 import '../constants/text_styles.dart';
+import '../services/tutorial_service.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({Key? key}) : super(key: key);
@@ -14,6 +15,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _darkMode = false;
   bool _cloudBackup = false;
   bool _notifications = true;
+  
+  // 重置所有教程并显示通知
+  Future<void> _resetAllTutorials() async {
+    await TutorialService.resetAllTutorials();
+    
+    if (mounted) {  // 确保组件仍然挂载
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('所有教程已重置，下次打开相关页面时将显示教程')),
+      );
+    }
+  }
   
   @override
   Widget build(BuildContext context) {
@@ -102,6 +114,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 12),
               ),
               child: const Text('清除'),
+            ),
+          ),
+          
+          _buildNavigationItem(
+            icon: Icons.gesture,
+            title: '手势教程',
+            subtitle: '重置所有手势教程',
+            onTap: () {}, // 不需要在点击行时执行操作，只通过按钮操作
+            trailing: OutlinedButton(
+              onPressed: _resetAllTutorials,
+              style: OutlinedButton.styleFrom(
+                minimumSize: const Size(80, 36),
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+              ),
+              child: const Text('重置'),
             ),
           ),
           

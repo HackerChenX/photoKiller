@@ -7,17 +7,21 @@ import '../constants/text_styles.dart';
 import '../constants/strings.dart';
 import '../models/photo.dart';
 import '../providers/photo_provider.dart';
+import '../services/tutorial_service.dart';
+import '../widgets/gesture_tutorial.dart';
 import 'cleanup_result_screen.dart';
 import 'pending_delete_screen.dart';
 
 class PhotoDetailScreen extends StatefulWidget {
   final Photo photo;
   final String? albumName;
+  final String? extraInfo;
   
   const PhotoDetailScreen({
     Key? key,
     required this.photo,
     this.albumName,
+    this.extraInfo,
   }) : super(key: key);
 
   @override
@@ -35,10 +39,25 @@ class _PhotoDetailScreenState extends State<PhotoDetailScreen> {
   // 当前显示的照片
   late Photo _currentPhoto;
   
+  // 是否显示手势教程
+  bool _showTutorial = false;
+  
   @override
   void initState() {
     super.initState();
     _currentPhoto = widget.photo;
+    _checkIfTutorialNeeded();
+  }
+  
+  Future<void> _checkIfTutorialNeeded() async {
+    // 检查用户是否已经看过照片详情页手势教程
+    final hasSeenTutorial = await TutorialService.hasSeenPhotoDetailTutorial();
+    
+    if (!hasSeenTutorial) {
+      setState(() {
+        _showTutorial = true;
+      });
+    }
   }
   
   // 返回确认对话框
@@ -281,142 +300,171 @@ class _PhotoDetailScreenState extends State<PhotoDetailScreen> {
             ),
           ],
         ),
-        body: GestureDetector(
-          onHorizontalDragEnd: (details) {
-            // 检测左右滑动
-            if (details.primaryVelocity == null) return;
-            
-            // 左滑：下一张
-            if (details.primaryVelocity! < 0) {
-              _navigateToNextPhoto();
-              // 如果是最后一张，则跳转到完成页面
-              if (currentIndex == totalPhotos) {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const PendingDeleteScreen(),
-                  ),
-                );
-              }
-            } 
-            // 右滑：回到上一张并撤销删除
-            else if (details.primaryVelocity! > 0) {
-              _undoAndNavigateToPrevious();
-            }
-          },
-          onVerticalDragStart: (details) {
-            _startDetails = details;
-          },
-          onVerticalDragUpdate: (details) {
-            _updateDetails = details;
-            final deltaY = details.globalPosition.dy - _startDetails.globalPosition.dy;
-            
-            // 下滑处理待删除照片
-            if (deltaY > 50) {
-              final screenHeight = MediaQuery.of(context).size.height;
-              final progress = (deltaY - 50) / (screenHeight / 3);
-              
-              setState(() {
-                _isDeleting = true;
-                _deleteProgress = progress.clamp(0.0, 1.0);
-              });
-            } else {
-              setState(() {
-                _isDeleting = false;
-                _deleteProgress = 0;
-              });
-            }
-          },
-          onVerticalDragEnd: (details) {
-            // 如果下拉达到阈值，则添加到待删除列表
-            if (_isDeleting && _deleteProgress > 0.5) {
-              _addToPendingDelete();
-            }
-            
-            // 重置状态
-            setState(() {
-              _isDeleting = false;
-              _deleteProgress = 0;
-            });
-          },
-          child: Stack(
-            children: [
-              // 照片查看区
-              Center(
-                child: Hero(
-                  tag: 'photo_${_currentPhoto.id}',
-                  child: InteractiveViewer(
-                    minScale: 0.5,
-                    maxScale: 3.0,
-                    child: ColorFiltered(
-                      colorFilter: ColorFilter.mode(
-                        isPendingDelete 
-                            ? Colors.grey.withOpacity(0.7) 
-                            : Colors.transparent,
-                        BlendMode.srcATop,
-                      ),
-                      child: Image.file(
-                        File(_currentPhoto.path),
-                        fit: BoxFit.contain,
-                        width: double.infinity,
-                        height: double.infinity,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              
-              // 删除指示器
-              if (_isDeleting)
-                Positioned.fill(
-                  child: Container(
-                    color: AppColors.danger.withOpacity(0.3 * _deleteProgress),
-                    child: Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            isPendingDelete ? Icons.restore : Icons.delete,
-                            color: Colors.white,
-                            size: 48 * _deleteProgress,
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            isPendingDelete ? '撤销删除' : '添加到删除',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 20 * _deleteProgress,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
+        body: Stack(
+          children: [
+            GestureDetector(
+              onHorizontalDragEnd: (details) {
+                // 检测左右滑动
+                if (details.primaryVelocity == null) return;
                 
-              // 待删除标记
-              if (isPendingDelete)
-                Positioned(
-                  top: 80,
-                  right: 16,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: AppColors.danger,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: const Text(
-                      '待删除',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
+                // 左滑：下一张
+                if (details.primaryVelocity! < 0) {
+                  _navigateToNextPhoto();
+                  // 如果是最后一张，则跳转到完成页面
+                  if (currentIndex == totalPhotos) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const PendingDeleteScreen(),
+                      ),
+                    );
+                  }
+                } 
+                // 右滑：回到上一张并撤销删除
+                else if (details.primaryVelocity! > 0) {
+                  _undoAndNavigateToPrevious();
+                }
+              },
+              onVerticalDragStart: (details) {
+                _startDetails = details;
+              },
+              onVerticalDragUpdate: (details) {
+                _updateDetails = details;
+                final deltaY = details.globalPosition.dy - _startDetails.globalPosition.dy;
+                
+                // 下滑处理待删除照片
+                if (deltaY > 50) {
+                  final screenHeight = MediaQuery.of(context).size.height;
+                  final progress = (deltaY - 50) / (screenHeight / 3);
+                  
+                  setState(() {
+                    _isDeleting = true;
+                    _deleteProgress = progress.clamp(0.0, 1.0);
+                  });
+                } else {
+                  setState(() {
+                    _isDeleting = false;
+                    _deleteProgress = 0;
+                  });
+                }
+              },
+              onVerticalDragEnd: (details) {
+                // 如果下拉达到阈值，则添加到待删除列表
+                if (_isDeleting && _deleteProgress > 0.5) {
+                  _addToPendingDelete();
+                }
+                
+                // 重置状态
+                setState(() {
+                  _isDeleting = false;
+                  _deleteProgress = 0;
+                });
+              },
+              child: Stack(
+                children: [
+                  // 照片查看区
+                  Center(
+                    child: Hero(
+                      tag: 'photo_${_currentPhoto.id}',
+                      child: InteractiveViewer(
+                        minScale: 0.5,
+                        maxScale: 3.0,
+                        child: ColorFiltered(
+                          colorFilter: ColorFilter.mode(
+                            isPendingDelete 
+                                ? Colors.grey.withOpacity(0.7) 
+                                : Colors.transparent,
+                            BlendMode.srcATop,
+                          ),
+                          child: Image.file(
+                            File(_currentPhoto.path),
+                            fit: BoxFit.contain,
+                            width: double.infinity,
+                            height: double.infinity,
+                          ),
+                        ),
                       ),
                     ),
                   ),
-                ),
-            ],
-          ),
+                  
+                  // 删除指示器
+                  if (_isDeleting)
+                    Positioned.fill(
+                      child: Container(
+                        color: AppColors.danger.withOpacity(0.3 * _deleteProgress),
+                        child: Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                isPendingDelete ? Icons.restore : Icons.delete,
+                                color: Colors.white,
+                                size: 48 * _deleteProgress,
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                isPendingDelete ? '撤销删除' : '添加到删除',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 20 * _deleteProgress,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    
+                  // 待删除标记
+                  if (isPendingDelete)
+                    Positioned(
+                      top: 80,
+                      right: 16,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: AppColors.danger,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: const Text(
+                          '待删除',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            
+            // 显示手势教程
+            if (_showTutorial)
+              GestureTutorialSequence(
+                tutorialSteps: [
+                  {
+                    'direction': GestureDirection.left,
+                    'text': '向左滑动可以查看下一张照片',
+                  },
+                  {
+                    'direction': GestureDirection.right,
+                    'text': '向右滑动可以查看上一张照片',
+                  },
+                  {
+                    'direction': GestureDirection.down,
+                    'text': '向下滑动可以删除当前照片',
+                  },
+                ],
+                onComplete: () {
+                  setState(() {
+                    _showTutorial = false;
+                  });
+                  TutorialService.markPhotoDetailTutorialAsSeen();
+                },
+              ),
+          ],
         ),
         bottomNavigationBar: Container(
           color: Colors.white.withOpacity(0.8),
@@ -574,5 +622,59 @@ class _PhotoDetailScreenState extends State<PhotoDetailScreen> {
         const SnackBar(content: Text('已经是第一张照片')),
       );
     }
+  }
+
+  Widget _buildMetadata() {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      height: _showDetails ? 220 : 0,
+      color: Colors.black.withOpacity(0.7),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              '照片信息',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 16),
+            _buildInfoRow('文件名', _currentPhoto.fileName ?? '未知'),
+            _buildInfoRow('大小', _currentPhoto.formattedSize),
+            _buildInfoRow('拍摄时间', _currentPhoto.formattedDate),
+            _buildInfoRow('分辨率', _currentPhoto.resolution ?? '未知'),
+            _buildInfoRow('格式', _currentPhoto.format?.toUpperCase() ?? '未知'),
+            if (widget.extraInfo != null)
+              _buildInfoRow('其他信息', widget.extraInfo!),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInfoRow(String label, String value) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 16,
+          ),
+        ),
+        Text(
+          value,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 16,
+          ),
+        ),
+      ],
+    );
   }
 } 

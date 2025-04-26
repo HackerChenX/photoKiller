@@ -6,6 +6,7 @@ enum PhotoType {
   similar,
   duplicate,
   video,
+  blurry,
 }
 
 class Photo {
@@ -22,6 +23,7 @@ class Photo {
   final bool isSelected; // 是否被选中用于删除
   final int? durationInSeconds; // 视频时长，单位秒
   final int? similarityGroupId; // 相似照片组ID
+  final double? blurScore; // 照片模糊程度评分，值越高越模糊
   
   Photo({
     required this.id,
@@ -37,6 +39,7 @@ class Photo {
     this.isSelected = false,
     this.durationInSeconds,
     this.similarityGroupId,
+    this.blurScore,
   });
   
   // 格式化创建日期
@@ -82,6 +85,7 @@ class Photo {
     bool? isSelected,
     int? durationInSeconds,
     int? similarityGroupId,
+    double? blurScore,
   }) {
     return Photo(
       id: id ?? this.id,
@@ -97,6 +101,7 @@ class Photo {
       isSelected: isSelected ?? this.isSelected,
       durationInSeconds: durationInSeconds ?? this.durationInSeconds,
       similarityGroupId: similarityGroupId ?? this.similarityGroupId,
+      blurScore: blurScore ?? this.blurScore,
     );
   }
 } 
