@@ -8,8 +8,6 @@ import '../constants/text_styles.dart';
 import '../models/photo.dart';
 import '../providers/photo_provider.dart';
 import '../widgets/loading_indicator.dart';
-import '../widgets/gesture_tutorial.dart';
-import '../services/tutorial_service.dart';
 import 'photo_detail_screen.dart';
 
 class TimelineScreen extends StatefulWidget {
@@ -32,7 +30,6 @@ enum TimelineViewType {
 
 class _TimelineScreenState extends State<TimelineScreen> {
   bool _isLoading = false;
-  bool _showTutorial = false;
   Map<int, Map<int, List<Photo>>> _photosByYearAndMonth = {};
   List<Photo> _displayPhotos = [];
   
@@ -40,20 +37,8 @@ class _TimelineScreenState extends State<TimelineScreen> {
   void initState() {
     super.initState();
     _loadPhotos();
-    _checkIfTutorialNeeded();
   }
   
-  Future<void> _checkIfTutorialNeeded() async {
-    // 检查用户是否已经看过时间线页面手势教程
-    final hasSeenTutorial = await TutorialService.hasSeenTimelineTutorial();
-    
-    if (!hasSeenTutorial) {
-      setState(() {
-        _showTutorial = true;
-      });
-    }
-  }
-
   Future<void> _loadPhotos() async {
     setState(() {
       _isLoading = true;
@@ -159,66 +144,10 @@ class _TimelineScreenState extends State<TimelineScreen> {
       appBar: AppBar(
         title: Text(title),
       ),
-      body: Stack(
-        children: [
-          _isLoading 
-            ? const LoadingIndicator(message: '加载照片中...')
-            : _buildContent(),
-            
-          // 显示手势教程
-          if (_showTutorial)
-            GestureTutorialSequence(
-              tutorialSteps: _getTimelineTutorialSteps(),
-              onComplete: () {
-                setState(() {
-                  _showTutorial = false;
-                });
-                TutorialService.markTimelineTutorialAsSeen();
-              },
-            ),
-        ],
-      ),
+      body: _isLoading 
+        ? const LoadingIndicator(message: '加载照片中...')
+        : _buildContent(),
     );
-  }
-  
-  // 根据视图类型获取不同的教程步骤
-  List<Map<String, dynamic>> _getTimelineTutorialSteps() {
-    switch (widget.viewType) {
-      case TimelineViewType.thisDay:
-        return [
-          {
-            'direction': GestureDirection.up,
-            'text': '向上滑动可以查看更多往年今日照片',
-          },
-          {
-            'direction': GestureDirection.tap,
-            'text': '点击照片可以查看详情',
-          },
-        ];
-      case TimelineViewType.recentlyAdded:
-        return [
-          {
-            'direction': GestureDirection.up,
-            'text': '向上滑动可以查看更多最近新增照片',
-          },
-          {
-            'direction': GestureDirection.tap,
-            'text': '点击照片可以查看详情',
-          },
-        ];
-      case TimelineViewType.all:
-      default:
-        return [
-          {
-            'direction': GestureDirection.up,
-            'text': '向上滑动可以查看更多年份和月份',
-          },
-          {
-            'direction': GestureDirection.tap,
-            'text': '点击照片可以查看详情',
-          },
-        ];
-    }
   }
   
   Widget _buildContent() {
