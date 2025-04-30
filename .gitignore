@@ -41,3 +41,16 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# 忽略嵌套的Git仓库
+cursor-mcp/
+example-mcp/
+
+# 忽略系统文件
+.DS_Store
+*.log
+
+# 忽略构建文件
+/build/
+/dist/
+/out/
